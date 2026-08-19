@@ -1,0 +1,10 @@
+---
+# Unregister the HTTP module / DSP_API from the farm with the GUI Configuration
+# Tool (Remove) BEFORE running this, then remove the module MSI here.
+- name: Uninstall the Virtru for SharePoint module (MSI)
+  ansible.windows.win_package:
+    path: "{{ sharepoint_installer_src }}"
+    state: absent
+    arguments: /qn /norestart
+  register: sharepoint_msi_remove
+  notify: Run iisreset

@@ -1,0 +1,81 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure the Virtru for Microsoft SharePoint module
+    description:
+      - Runs on each SharePoint server in the farm and automates the prerequisite
+        runtimes (.NET Framework 4.8, .NET 8.0 Hosting Bundle), the module MSI,
+        and the two DSP config JSON files, then restarts IIS.
+      - Farm-wide registration of the HTTP module and DSP_API is performed with
+        the GUI Configuration Tool and is not automated by this role.
+      - The IdP client (dsp-sharepoint) is provisioned separately (virtru.dsp_platform).
+    options:
+      sharepoint_state:
+        type: str
+        default: present
+        choices: [present, absent]
+        description: Install and configure the module, or uninstall the module MSI.
+      sharepoint_install_dotnet48:
+        type: bool
+        default: false
+        description: Install .NET Framework 4.8 (needed on Windows Server 2016; preinstalled on 2019+).
+      sharepoint_dotnet48_src:
+        type: str
+        description: Path or URL to the .NET Framework 4.8 offline installer. Required when C(sharepoint_install_dotnet48).
+      sharepoint_install_hosting_bundle:
+        type: bool
+        default: true
+        description: Install the .NET 8.0 Hosting Bundle (required for DSP_API under IIS).
+      sharepoint_hosting_bundle_src:
+        type: str
+        description: Path or URL to dotnet-hosting-8.0.x-win.exe. Required when C(sharepoint_install_hosting_bundle).
+      sharepoint_install_module:
+        type: bool
+        default: true
+        description: Install (or, with state=absent, remove) the Virtru SharePoint module MSI.
+      sharepoint_installer_src:
+        type: str
+        description: Path or URL to the Virtru SharePoint module MSI. Required when C(sharepoint_install_module).
+      sharepoint_manage_config:
+        type: bool
+        default: true
+        description: Merge DSP/IdP settings into the module and SDK config JSON files.
+      sharepoint_configs_dir:
+        type: str
+        description: Directory holding the Virtru config JSON files (default C(C:\ProgramData\Virtru\Configs)).
+      sharepoint_module_config_path:
+        type: str
+        description: Full path to Virtru.Sharepoint.Module.config.json.
+      sharepoint_sdk_config_path:
+        type: str
+        description: Full path to Virtru.DotNet.SDK.config.json.
+      sharepoint_keycloak_authority:
+        type: str
+        description: OIDC realm URL (e.g. C(https://idp.example.com/realms/opentdf)). Required when C(sharepoint_manage_config).
+      sharepoint_client_id:
+        type: str
+        default: dsp-sharepoint
+        description: OAuth2 client id for the module's service account.
+      sharepoint_client_secret:
+        type: str
+        description: OAuth2 client secret. Required when C(sharepoint_manage_config).
+      sharepoint_user_identity_claim:
+        type: str
+        default: email
+        description: Claim used to identify the user - "email" or the UPN claim URI.
+      sharepoint_module_config_extra:
+        type: dict
+        default: {}
+        description: Extra keys merged verbatim into the module config JSON (e.g. KAS URL, DSP API URL).
+      sharepoint_iisreset:
+        type: bool
+        default: true
+        description: Run iisreset after installing the Hosting Bundle / changing config.
+      sharepoint_reboot:
+        type: bool
+        default: false
+        description: Allow a reboot if a runtime install requests one.
+      sharepoint_reboot_timeout:
+        type: int
+        default: 600
+        description: Reboot timeout in seconds.

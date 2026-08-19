@@ -1,0 +1,9 @@
+---
+- name: Run iisreset
+  ansible.windows.win_command: iisreset.exe
+  when: sharepoint_iisreset | bool
+
+- name: Reboot the Windows host
+  ansible.windows.win_reboot:
+    reboot_timeout: "{{ sharepoint_reboot_timeout }}"
+  when: sharepoint_reboot | bool

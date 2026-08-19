@@ -2,10 +2,22 @@ ancestor: null
 releases:
   1.0.0:
     changes:
-      release_summary: 'Initial release of the virtru.dsp_pep collection for installing DSP Policy Enforcement
-        Points (PEPs), one role per PEP: desktop (Virtru Desktop on Windows/macOS), windows (Virtru File
-        Services, the Windows file-watcher), and outlook (the Virtru for Microsoft Outlook add-in for
-        Exchange).'
+      release_summary: 'Initial release of the virtru.dsp_pep collection for installing
+        DSP Policy Enforcement Points (PEPs), one role per PEP: desktop (Virtru Desktop
+        on Windows/macOS), windows (Virtru File Services, the Windows file-watcher),
+        and outlook (the Virtru for Microsoft Outlook add-in for Exchange).'
     fragments:
     - 1.0.0.yml
     release_date: '2026-08-18'
+  1.1.0:
+    changes:
+      minor_changes:
+      - sharepoint role - new role ``virtru.dsp_pep.sharepoint`` to install and configure
+        the Virtru for Microsoft SharePoint IIS HTTP module on SharePoint Server 2016+.
+        Installs the .NET 8.0 Hosting Bundle (and optionally .NET Framework 4.8) and
+        the module MSI, merges DSP/IdP settings into the module and SDK config JSON
+        files (preserving keys managed by the GUI Configuration Tool), and restarts
+        IIS. Farm registration and Keycloak client setup remain manual/platform-side.
+    fragments:
+    - 1.1.0.yml
+    release_date: '2026-08-19'

@@ -1,0 +1,16 @@
+---
+# Install the Virtru for Microsoft SharePoint IIS module on the farm's servers.
+#
+#   ansible-playbook virtru.dsp_pep.install_sharepoint -i inventory.ini \
+#     -e sharepoint_installer_src=C:\media\VirtruSharePoint.msi \
+#     -e sharepoint_hosting_bundle_src=C:\media\dotnet-hosting-8.0.24-win.exe \
+#     -e sharepoint_keycloak_authority=https://idp.example.com/realms/opentdf \
+#     -e sharepoint_client_secret=...
+#
+# Run against every SharePoint server in the farm. Farm registration is done with
+# the GUI Configuration Tool afterwards. See roles/sharepoint/README.md.
+- name: Install the Virtru for SharePoint module
+  hosts: sharepoint_servers
+  gather_facts: true
+  roles:
+    - role: virtru.dsp_pep.sharepoint

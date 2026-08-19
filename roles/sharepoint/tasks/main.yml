@@ -1,0 +1,63 @@
+---
+- name: Enforce SharePoint (Windows) target
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Windows'
+    fail_msg: "The sharepoint role runs on the SharePoint server (Windows)."
+    quiet: true
+
+- name: Validate prerequisite installer sources
+  ansible.builtin.assert:
+    that:
+      - not (sharepoint_install_dotnet48 | bool) or (sharepoint_dotnet48_src | length > 0)
+      - not (sharepoint_install_hosting_bundle | bool) or (sharepoint_hosting_bundle_src | length > 0)
+    fail_msg: >-
+      Enabled runtime installs require a source: set sharepoint_dotnet48_src /
+      sharepoint_hosting_bundle_src, or disable the corresponding install flag.
+    quiet: true
+
+- name: Validate module installer source
+  ansible.builtin.assert:
+    that:
+      - sharepoint_installer_src | length > 0
+    fail_msg: "sharepoint_installer_src (module MSI path or URL) is required."
+    quiet: true
+  when:
+    - sharepoint_state in ['present', 'absent']
+    - sharepoint_install_module | bool
+
+- name: Validate config variables
+  ansible.builtin.assert:
+    that:
+      - sharepoint_keycloak_authority | length > 0
+      - sharepoint_client_secret | length > 0
+    fail_msg: "sharepoint_keycloak_authority and sharepoint_client_secret are required when sharepoint_manage_config is true."
+    quiet: true
+  when:
+    - sharepoint_state == 'present'
+    - sharepoint_manage_config | bool
+
+- name: Install prerequisite runtimes
+  ansible.builtin.include_tasks: 00-prereqs.yml
+  when: sharepoint_state == 'present'
+
+# iisreset after the Hosting Bundle so the ASP.NET Core Module is registered
+# before the module MSI / DSP_API are installed.
+- name: Apply prerequisite handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Install the SharePoint module
+  ansible.builtin.include_tasks: 01-install.yml
+  when:
+    - sharepoint_state == 'present'
+    - sharepoint_install_module | bool
+
+- name: Configure the SharePoint module
+  ansible.builtin.include_tasks: 02-config.yml
+  when:
+    - sharepoint_state == 'present'
+    - sharepoint_manage_config | bool
+
+- name: Uninstall the SharePoint module
+  ansible.builtin.include_tasks: 03-uninstall.yml
+  when: sharepoint_state == 'absent'

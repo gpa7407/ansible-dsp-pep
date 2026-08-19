@@ -19,7 +19,7 @@ Tested against Ansible **>=2.15**.
 | [desktop](roles/desktop/README.md) | Virtru Desktop | Windows 11, macOS (Apple Silicon) | Available |
 | [windows](roles/windows/README.md) | Virtru File Services (file-watcher) | Windows 11 24H2 (x64) | Available |
 | [outlook](roles/outlook/README.md) | Virtru for Microsoft Outlook add-in | Exchange Server 2019 CU12+ | Available |
-| sharepoint | SharePoint PEP | Windows Server | Planned |
+| [sharepoint](roles/sharepoint/README.md) | Virtru for Microsoft SharePoint (IIS module) | SharePoint Server 2016+ | Available |
 
 Additional PEPs are added as new roles under `roles/<pep_name>`.
 
@@ -37,6 +37,7 @@ that role's README:
 - **desktop** — [roles/desktop/README.md](roles/desktop/README.md)
 - **windows** (Virtru File Services) — [roles/windows/README.md](roles/windows/README.md)
 - **outlook** (Outlook add-in) — [roles/outlook/README.md](roles/outlook/README.md)
+- **sharepoint** (SharePoint IIS module) — [roles/sharepoint/README.md](roles/sharepoint/README.md)
 
 Ready-to-run example playbooks are in [`playbooks/`](playbooks/).
 

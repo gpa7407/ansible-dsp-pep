@@ -1,0 +1,72 @@
+---
+# .NET Framework 4.8 -- preinstalled on Server 2019+; only needed on 2016.
+- name: Resolve the .NET Framework 4.8 installer
+  when: sharepoint_install_dotnet48 | bool
+  block:
+    - name: Download the .NET Framework 4.8 installer
+      ansible.windows.win_get_url:
+        url: "{{ sharepoint_dotnet48_src }}"
+        dest: 'C:\Windows\Temp\ndp48-installer.exe'
+      when: sharepoint_dotnet48_src is match('^https?://')
+      register: sharepoint_ndp48_dl
+
+    - name: Set the .NET Framework 4.8 installer path
+      ansible.builtin.set_fact:
+        sharepoint_dotnet48_path: >-
+          {{ sharepoint_ndp48_dl.dest if (sharepoint_dotnet48_src is match('^https?://')) else sharepoint_dotnet48_src }}
+
+    - name: Install .NET Framework 4.8 (if below required release)
+      ansible.windows.win_powershell:
+        script: |
+          $ErrorActionPreference = 'Stop'
+          $key = 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full'
+          $rel = (Get-ItemProperty -Path $key -Name Release -ErrorAction SilentlyContinue).Release
+          if ($rel -ge 528040) {
+            $Ansible.Changed = $false
+            $Ansible.Result = @{ installed = $true; release = $rel }
+          } else {
+            $p = Start-Process -FilePath '{{ sharepoint_dotnet48_path }}' -ArgumentList '/q','/norestart' -Wait -PassThru
+            if ($p.ExitCode -notin 0, 3010, 1641) { throw "NDP48 installer exit code $($p.ExitCode)" }
+            $Ansible.Changed = $true
+            $Ansible.Result = @{ installed = $true; exit_code = $p.ExitCode }
+          }
+      register: sharepoint_ndp48
+      notify: Reboot the Windows host
+
+# .NET 8.0 Hosting Bundle -- required for DSP_API (ASP.NET Core) under IIS.
+- name: Resolve the .NET 8.0 Hosting Bundle installer
+  when: sharepoint_install_hosting_bundle | bool
+  block:
+    - name: Download the .NET 8.0 Hosting Bundle installer
+      ansible.windows.win_get_url:
+        url: "{{ sharepoint_hosting_bundle_src }}"
+        dest: 'C:\Windows\Temp\dotnet-hosting-8-win.exe'
+      when: sharepoint_hosting_bundle_src is match('^https?://')
+      register: sharepoint_hb_dl
+
+    - name: Set the .NET 8.0 Hosting Bundle installer path
+      ansible.builtin.set_fact:
+        sharepoint_hosting_bundle_path: >-
+          {{ sharepoint_hb_dl.dest if (sharepoint_hosting_bundle_src is match('^https?://')) else sharepoint_hosting_bundle_src }}
+
+    - name: Install the .NET 8.0 Hosting Bundle (if ASP.NET Core 8 runtime absent)
+      ansible.windows.win_powershell:
+        script: |
+          $ErrorActionPreference = 'Stop'
+          $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
+          $have = $false
+          if (Test-Path $dotnet) {
+            $have = @(& $dotnet --list-runtimes 2>$null |
+              Where-Object { $_ -match 'Microsoft\.AspNetCore\.App 8\.' }).Count -gt 0
+          }
+          if ($have) {
+            $Ansible.Changed = $false
+            $Ansible.Result = @{ installed = $true }
+          } else {
+            $p = Start-Process -FilePath '{{ sharepoint_hosting_bundle_path }}' -ArgumentList '/quiet','/norestart' -Wait -PassThru
+            if ($p.ExitCode -notin 0, 3010, 1641) { throw "Hosting Bundle installer exit code $($p.ExitCode)" }
+            $Ansible.Changed = $true
+            $Ansible.Result = @{ installed = $true; exit_code = $p.ExitCode }
+          }
+      register: sharepoint_hb_install
+      notify: Run iisreset

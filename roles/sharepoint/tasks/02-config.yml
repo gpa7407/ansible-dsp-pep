@@ -1,0 +1,64 @@
+---
+- name: Ensure the Virtru configs directory exists
+  ansible.windows.win_file:
+    path: "{{ sharepoint_configs_dir }}"
+    state: directory
+
+- name: Merge DSP settings into Virtru.Sharepoint.Module.config.json
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      $path = '{{ sharepoint_module_config_path }}'
+      if (Test-Path -LiteralPath $path) {
+        $cfg = Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
+      } else {
+        $cfg = [pscustomobject]@{}
+      }
+      $before = $cfg | ConvertTo-Json -Depth 32
+      $updates = [ordered]@{
+        keycloakAuthority    = '{{ sharepoint_keycloak_authority }}'
+        keycloakClientId     = '{{ sharepoint_client_id }}'
+        keycloakClientSecret = '{{ sharepoint_client_secret }}'
+        userIdentityClaim    = '{{ sharepoint_user_identity_claim }}'
+      }
+      {% for k, v in sharepoint_module_config_extra.items() %}
+      $updates['{{ k }}'] = ('{{ v | to_json }}' | ConvertFrom-Json)
+      {% endfor %}
+      foreach ($k in $updates.Keys) {
+        $cfg | Add-Member -NotePropertyName $k -NotePropertyValue $updates[$k] -Force
+      }
+      $after = $cfg | ConvertTo-Json -Depth 32
+      if ($after -ne $before) {
+        Set-Content -LiteralPath $path -Value $after -Encoding UTF8
+        $Ansible.Changed = $true
+      } else {
+        $Ansible.Changed = $false
+      }
+  no_log: true
+  notify: Run iisreset
+
+- name: Merge client credentials into Virtru.DotNet.SDK.config.json
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      $path = '{{ sharepoint_sdk_config_path }}'
+      if (Test-Path -LiteralPath $path) {
+        $cfg = Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
+      } else {
+        $cfg = [pscustomobject]@{}
+      }
+      $before = $cfg | ConvertTo-Json -Depth 32
+      if (-not $cfg.PSObject.Properties['OpenIdConnectConfig']) {
+        $cfg | Add-Member -NotePropertyName OpenIdConnectConfig -NotePropertyValue ([pscustomobject]@{}) -Force
+      }
+      $cfg.OpenIdConnectConfig | Add-Member -NotePropertyName ClientId -NotePropertyValue '{{ sharepoint_client_id }}' -Force
+      $cfg.OpenIdConnectConfig | Add-Member -NotePropertyName ClientSecret -NotePropertyValue '{{ sharepoint_client_secret }}' -Force
+      $after = $cfg | ConvertTo-Json -Depth 32
+      if ($after -ne $before) {
+        Set-Content -LiteralPath $path -Value $after -Encoding UTF8
+        $Ansible.Changed = $true
+      } else {
+        $Ansible.Changed = $false
+      }
+  no_log: true
+  notify: Run iisreset

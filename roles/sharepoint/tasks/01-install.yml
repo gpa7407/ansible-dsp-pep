@@ -1,0 +1,15 @@
+---
+- name: Install the Virtru for SharePoint module (MSI)
+  ansible.windows.win_package:
+    path: "{{ sharepoint_installer_src }}"
+    state: present
+    arguments: /qn /norestart
+  register: sharepoint_msi
+  notify: Run iisreset
+
+- name: Note the Configuration Tool step
+  ansible.builtin.debug:
+    msg: >-
+      Module MSI installed. Farm registration (HTTP module in web.config, DSP_API
+      in IIS, database and encrypted search) is done with the GUI Configuration
+      Tool -- see roles/sharepoint/README.md.

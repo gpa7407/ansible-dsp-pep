@@ -4,6 +4,14 @@ DSP PEP Collection Release Notes
 
 .. contents:: Topics
 
+v1.1.0
+======
+
+Minor Changes
+-------------
+
+- sharepoint role - new role ``virtru.dsp_pep.sharepoint`` to install and configure the Virtru for Microsoft SharePoint IIS HTTP module on SharePoint Server 2016+. Installs the .NET 8.0 Hosting Bundle (and optionally .NET Framework 4.8) and the module MSI, merges DSP/IdP settings into the module and SDK config JSON files (preserving keys managed by the GUI Configuration Tool), and restarts IIS. Farm registration and Keycloak client setup remain manual/platform-side.
+
 v1.0.0
 ======
 

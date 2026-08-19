@@ -1,0 +1,53 @@
+---
+# ===========================================================================
+# virtru.dsp_pep.sharepoint — Virtru for Microsoft SharePoint (IIS HTTP Module)
+# on-premises SharePoint Server (2016+). This role runs ON each SharePoint
+# server in the farm and automates the pieces that CAN be automated:
+#   - prerequisite runtimes (.NET Framework 4.8, .NET 8.0 Hosting Bundle) + iisreset
+#   - the module installer (MSI)
+#   - the two DSP config JSON files (merged, not overwritten)
+#   - restarting IIS to pick up changes
+#
+# The farm-wide registration of the HTTP module / DSP_API (writing web.config,
+# database, encrypted-search setup) is performed with the GUI **Configuration
+# Tool** and is NOT automated here — see roles/sharepoint/README.md. The IdP/
+# Keycloak client (dsp-sharepoint) is provisioned separately (virtru.dsp_platform).
+# ===========================================================================
+
+# --- State ------------------------------------------------------------------
+sharepoint_state: present               # present = install/configure, absent = uninstall module
+
+# --- Prerequisite: .NET Framework 4.8 (preinstalled on Server 2019+) --------
+sharepoint_install_dotnet48: false      # true to install on Server 2016
+sharepoint_dotnet48_src: ""             # path or URL to the NDP48 offline installer (required if above true)
+
+# --- Prerequisite: .NET 8.0 Hosting Bundle (required for DSP_API under IIS) --
+sharepoint_install_hosting_bundle: true
+sharepoint_hosting_bundle_src: ""       # path or URL to dotnet-hosting-8.0.x-win.exe (required if above true)
+
+# --- Module installer (MSI) -------------------------------------------------
+sharepoint_install_module: true
+sharepoint_installer_src: ""            # path or URL to the Virtru SharePoint module MSI (required if above true)
+
+# --- Config files (merged into existing JSON, other keys preserved) ---------
+sharepoint_manage_config: true
+sharepoint_configs_dir: 'C:\ProgramData\Virtru\Configs'
+sharepoint_module_config_path: "{{ sharepoint_configs_dir }}\\Virtru.Sharepoint.Module.config.json"
+sharepoint_sdk_config_path: "{{ sharepoint_configs_dir }}\\Virtru.DotNet.SDK.config.json"
+
+# DSP / IdP connection written into Virtru.Sharepoint.Module.config.json
+sharepoint_keycloak_authority: ""       # OIDC realm URL, e.g. https://idp.example.com/realms/opentdf (required if manage_config)
+sharepoint_client_id: dsp-sharepoint    # OAuth2 client id for the module's service account
+sharepoint_client_secret: ""            # OAuth2 client secret (required if manage_config)
+sharepoint_user_identity_claim: email   # "email" (Option B) or the UPN claim URI (Option A)
+
+# Extra module-config keys the admin knows (e.g. KAS URL, DSP API URL). Values
+# may be strings, numbers, booleans or lists; merged verbatim into the JSON.
+# Keys managed by the GUI Configuration Tool (database, search accounts, module
+# registration) are left untouched.
+sharepoint_module_config_extra: {}
+
+# --- IIS / reboot -----------------------------------------------------------
+sharepoint_iisreset: true               # run iisreset after installing the bundle / changing config
+sharepoint_reboot: false                # allow a reboot if a runtime install requests one
+sharepoint_reboot_timeout: 600
