@@ -7,17 +7,17 @@
     quiet: true
 
 - name: Install Virtru Desktop (Windows)
-  ansible.builtin.include_tasks: install_windows.yml
+  ansible.builtin.include_tasks: 00-install_windows.yml
   when:
     - ansible_os_family == 'Windows'
     - desktop_state == 'present'
 
 - name: Install Virtru Desktop (macOS)
-  ansible.builtin.include_tasks: install_macos.yml
+  ansible.builtin.include_tasks: 01-install_macos.yml
   when:
     - ansible_system == 'Darwin'
     - desktop_state == 'present'
 
 - name: Manage Virtru Desktop configuration
-  ansible.builtin.include_tasks: config.yml
+  ansible.builtin.include_tasks: 02-config.yml
   when: desktop_manage_config | bool

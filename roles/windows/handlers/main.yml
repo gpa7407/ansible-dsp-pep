@@ -1,0 +1,5 @@
+---
+- name: Reboot the Windows host
+  ansible.windows.win_reboot:
+    reboot_timeout: "{{ windows_reboot_timeout }}"
+  when: windows_reboot | bool

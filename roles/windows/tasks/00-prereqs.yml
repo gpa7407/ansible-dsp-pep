@@ -41,11 +41,4 @@
     - name: Set TESTSIGNING ON
       ansible.windows.win_command: bcdedit /set TESTSIGNING ON
       when: not (windows_bcd.stdout is search('testsigning\s+Yes', ignorecase=True))
-      register: windows_testsigning
-
-    - name: Reboot to apply test-signing
-      ansible.windows.win_reboot:
-        reboot_timeout: "{{ windows_reboot_timeout }}"
-      when:
-        - windows_reboot | bool
-        - windows_testsigning is changed
+      notify: Reboot the Windows host

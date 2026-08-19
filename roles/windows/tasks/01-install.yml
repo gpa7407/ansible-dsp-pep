@@ -20,13 +20,10 @@
     state: present
   register: windows_fs_install
   no_log: true
+  notify: Reboot the Windows host
 
-- name: Reboot after install when required
-  ansible.windows.win_reboot:
-    reboot_timeout: "{{ windows_reboot_timeout }}"
-  when:
-    - windows_reboot | bool
-    - windows_fs_install.reboot_required | default(false)
+- name: Reboot (if required) before verifying services
+  ansible.builtin.meta: flush_handlers
 
 - name: Gather File Services service status
   ansible.windows.win_service_info:

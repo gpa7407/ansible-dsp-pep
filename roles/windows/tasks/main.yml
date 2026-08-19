@@ -17,15 +17,18 @@
     quiet: true
 
 - name: Prerequisites (VC++ runtime, driver certs, test-signing)
-  ansible.builtin.include_tasks: prereqs.yml
+  ansible.builtin.include_tasks: 00-prereqs.yml
   when: windows_state == 'present'
 
+- name: Apply a test-signing reboot before installing
+  ansible.builtin.meta: flush_handlers
+
 - name: Install Virtru File Services
-  ansible.builtin.include_tasks: install.yml
+  ansible.builtin.include_tasks: 01-install.yml
   when: windows_state == 'present'
 
 - name: Apply optional registry tuning
-  ansible.builtin.include_tasks: registry.yml
+  ansible.builtin.include_tasks: 02-registry.yml
   when:
     - windows_state == 'present'
     - windows_registry_settings | length > 0
