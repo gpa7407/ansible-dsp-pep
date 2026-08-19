@@ -1,0 +1,7 @@
+---
+- name: Download the Outlook add-in manifest from the platform
+  ansible.windows.win_get_url:
+    url: "{{ outlook_manifest_url }}"
+    dest: "{{ outlook_manifest_dest }}"
+    validate_certs: "{{ outlook_validate_certs }}"
+  register: outlook_manifest_dl

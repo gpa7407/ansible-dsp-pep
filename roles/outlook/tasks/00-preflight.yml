@@ -1,0 +1,8 @@
+---
+- name: Verify the Outlook backend service config endpoint is reachable
+  ansible.windows.win_uri:
+    url: "{{ outlook_config_url }}"
+    method: GET
+    validate_certs: "{{ outlook_validate_certs }}"
+    status_code: [200]
+  register: outlook_config_check

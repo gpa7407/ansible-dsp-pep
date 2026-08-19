@@ -1,0 +1,60 @@
+---
+argument_specs:
+  main:
+    short_description: Deploy the Virtru for Microsoft Outlook add-in to Exchange
+    description:
+      - Downloads the Outlook add-in manifest from the DSP platform and installs
+        it organization-wide on Microsoft Exchange via New-App.
+      - Runs on the Exchange server using the Exchange Management Shell.
+      - The Outlook backend service is enabled platform-side and its OIDC clients
+        are provisioned separately (virtru.dsp_platform).
+    options:
+      outlook_platform_endpoint:
+        type: str
+        required: true
+        description: DSP base URL (e.g. C(https://platform.dsp.example.com)).
+      outlook_manifest_url:
+        type: str
+        description: URL of the add-in manifest. Defaults to <endpoint>/outlook/manifest.xml.
+      outlook_config_url:
+        type: str
+        description: URL of the Outlook service config. Defaults to <endpoint>/outlook/config.
+      outlook_manifest_dest:
+        type: str
+        description: Path on the Exchange server to save the manifest before installing.
+      outlook_validate_certs:
+        type: bool
+        default: true
+        description: Verify TLS when fetching the manifest/config (set false for self-signed DSP).
+      outlook_state:
+        type: str
+        default: present
+        choices: [present, absent]
+        description: Install or remove the organization add-in.
+      outlook_app_display_name:
+        type: str
+        default: Virtru
+        description: Add-in DisplayName used to detect an existing install.
+      outlook_enabled:
+        type: bool
+        default: true
+        description: Whether the add-in is enabled (New-App -Enabled).
+      outlook_default_state_for_user:
+        type: str
+        default: AlwaysEnabled
+        choices: [AlwaysEnabled, Enabled, Disabled]
+        description: Default per-user state (New-App -DefaultStateForUser).
+      outlook_force_reinstall:
+        type: bool
+        default: false
+        description: Remove and re-add the add-in to refresh the manifest.
+      outlook_verify_service:
+        type: bool
+        default: true
+        description: Preflight-check that the Outlook service config URL is reachable.
+      outlook_exchange_snapin:
+        type: str
+        description: Exchange Management Shell snap-in loaded when the *-App cmdlets are unavailable.
+      outlook_exchange_init_script:
+        type: str
+        description: Optional PowerShell run before the *-App cmdlets (e.g. Connect-ExchangeOnline).

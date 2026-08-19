@@ -1,0 +1,20 @@
+---
+- name: Remove the Virtru Outlook add-in (Remove-App)
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      {{ outlook_exchange_init_script }}
+      if (-not (Get-Command Get-App -ErrorAction SilentlyContinue)) {
+        Add-PSSnapin '{{ outlook_exchange_snapin }}'
+      }
+      $name = '{{ outlook_app_display_name }}'
+      $existing = Get-App -OrganizationApp -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $name }
+      if ($existing) {
+        Remove-App -Identity $existing.AppId -OrganizationApp -Confirm:$false | Out-Null
+        $Ansible.Changed = $true
+        $Ansible.Result = @{ removed = $true; app_id = "$($existing.AppId)" }
+      } else {
+        $Ansible.Changed = $false
+        $Ansible.Result = @{ removed = $false }
+      }
+  register: outlook_remove

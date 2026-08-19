@@ -1,0 +1,32 @@
+---
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - outlook_platform_endpoint | length > 0
+    fail_msg: "outlook_platform_endpoint is required (e.g. https://platform.dsp.example.com)."
+    quiet: true
+
+- name: Enforce Exchange (Windows) target
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Windows'
+    fail_msg: "The outlook role runs on the Microsoft Exchange server (Windows)."
+    quiet: true
+
+- name: Verify the Outlook service is reachable
+  ansible.builtin.include_tasks: 00-preflight.yml
+  when:
+    - outlook_state == 'present'
+    - outlook_verify_service | bool
+
+- name: Download the add-in manifest
+  ansible.builtin.include_tasks: 01-manifest.yml
+  when: outlook_state == 'present'
+
+- name: Install the Outlook add-in
+  ansible.builtin.include_tasks: 02-install.yml
+  when: outlook_state == 'present'
+
+- name: Uninstall the Outlook add-in
+  ansible.builtin.include_tasks: 03-uninstall.yml
+  when: outlook_state == 'absent'

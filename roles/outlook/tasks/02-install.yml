@@ -1,0 +1,27 @@
+---
+- name: Deploy the Virtru Outlook add-in (New-App)
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      {{ outlook_exchange_init_script }}
+      if (-not (Get-Command New-App -ErrorAction SilentlyContinue)) {
+        Add-PSSnapin '{{ outlook_exchange_snapin }}'
+      }
+      $name = '{{ outlook_app_display_name }}'
+      $existing = Get-App -OrganizationApp -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $name }
+      if ($existing -and -not {{ '$true' if (outlook_force_reinstall | bool) else '$false' }}) {
+        $Ansible.Changed = $false
+        $Ansible.Result = @{ installed = $true; app_id = "$($existing.AppId)"; action = 'unchanged' }
+      } else {
+        if ($existing) { Remove-App -Identity $existing.AppId -OrganizationApp -Confirm:$false | Out-Null }
+        $data = [System.IO.File]::ReadAllBytes('{{ outlook_manifest_dest }}')
+        $enabled = {{ '$true' if (outlook_enabled | bool) else '$false' }}
+        $app = New-App -OrganizationApp -FileData $data -Enabled $enabled -DefaultStateForUser '{{ outlook_default_state_for_user }}'
+        $Ansible.Changed = $true
+        $Ansible.Result = @{ installed = $true; app_id = "$($app.AppId)"; action = ($(if ($existing) { 'reinstalled' } else { 'installed' })) }
+      }
+  register: outlook_install
+
+- name: Show add-in status
+  ansible.builtin.debug:
+    var: outlook_install.result

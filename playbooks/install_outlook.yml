@@ -1,0 +1,12 @@
+---
+# Deploy the Virtru for Microsoft Outlook add-in to Exchange.
+#
+#   ansible-playbook virtru.dsp_pep.install_outlook -i inventory.ini \
+#     -e outlook_platform_endpoint=https://platform.dsp.example.com
+#
+# Run against the Exchange server(s). See roles/outlook/defaults/main.yml.
+- name: Deploy the Virtru Outlook add-in
+  hosts: exchange_servers
+  gather_facts: true
+  roles:
+    - role: virtru.dsp_pep.outlook

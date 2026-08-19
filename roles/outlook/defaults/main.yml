@@ -1,0 +1,31 @@
+---
+# ===========================================================================
+# virtru.dsp_pep.outlook — deploy the Virtru for Microsoft Outlook add-in to
+# Microsoft Exchange (Exchange Server 2019 CU12+). The Outlook backend service
+# is enabled platform-side (platform.mode includes "outlook") and its OIDC
+# clients (dsp-outlook, dsp-outlook-auth) are provisioned by virtru.dsp_platform.
+# This role runs on the Exchange server (Exchange Management Shell).
+# ===========================================================================
+
+# --- Required ---------------------------------------------------------------
+outlook_platform_endpoint: ""          # DSP base URL, e.g. https://platform.dsp.example.com
+
+# --- Add-in manifest --------------------------------------------------------
+outlook_manifest_url: "{{ outlook_platform_endpoint }}/outlook/manifest.xml"
+outlook_config_url: "{{ outlook_platform_endpoint }}/outlook/config"
+outlook_manifest_dest: 'C:\Windows\Temp\virtru-outlook-manifest.xml'
+outlook_validate_certs: true           # set false for self-signed DSP certs
+
+# --- Deployment -------------------------------------------------------------
+outlook_state: present                 # present = install add-in, absent = remove
+outlook_app_display_name: Virtru       # DisplayName used to detect an existing install
+outlook_enabled: true                  # New-App -Enabled
+outlook_default_state_for_user: AlwaysEnabled  # AlwaysEnabled | Enabled | Disabled
+outlook_force_reinstall: false         # remove + re-add to refresh the manifest
+
+# --- Behavior ---------------------------------------------------------------
+outlook_verify_service: true           # preflight-check /outlook/config is reachable
+# Exchange Management Shell snap-in loaded when the *-App cmdlets aren't present.
+# For Exchange Online, override outlook_exchange_init_script to Connect-ExchangeOnline.
+outlook_exchange_snapin: Microsoft.Exchange.Management.PowerShell.SnapIn
+outlook_exchange_init_script: ""       # optional PowerShell run before the *-App cmdlets
