@@ -13,22 +13,41 @@
 - name: Import the driver-signing root CA certificate
   ansible.windows.win_certificate_store:
     path: "{{ windows_rootca_cert_src }}"
-    store_location: LocalMachine
+    store_location: "{{ windows_cert_store_location }}"
     store_name: Root
     state: present
   when:
     - windows_import_certs | bool
     - windows_rootca_cert_src | length > 0
 
-- name: Import the test-signing certificate
+- name: Import the test-signing certificate (Personal)
   ansible.windows.win_certificate_store:
     path: "{{ windows_testsign_cert_src }}"
-    store_location: LocalMachine
+    store_location: "{{ windows_cert_store_location }}"
     store_name: My
     state: present
   when:
     - windows_import_certs | bool
     - windows_testsign_cert_src | length > 0
+
+- name: Import the test-signing certificate (Trusted Root, if required)
+  ansible.windows.win_certificate_store:
+    path: "{{ windows_testsign_cert_src }}"
+    store_location: "{{ windows_cert_store_location }}"
+    store_name: Root
+    state: present
+  when:
+    - windows_import_certs | bool
+    - windows_testsign_also_root | bool
+    - windows_testsign_cert_src | length > 0
+
+- name: Trust the DSP platform TLS certificate (self-signed / non-domain-joined)
+  ansible.windows.win_certificate_store:
+    path: "{{ windows_dsp_platform_cert_src }}"
+    store_location: "{{ windows_cert_store_location }}"
+    store_name: Root
+    state: present
+  when: windows_dsp_platform_cert_src | length > 0
 
 - name: Enable Windows test-signing mode
   when: windows_enable_test_signing | bool

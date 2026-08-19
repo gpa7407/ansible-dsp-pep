@@ -22,10 +22,12 @@ argument_specs:
         description: OIDC client secret for the PEP.
       windows_audience:
         type: str
-        description: Token audience expected by DSP. Defaults to the platform endpoint.
+        description: Token audience. Defaults to the client id (they match for now).
       windows_default_attributes:
         type: str
-        description: "';'-delimited attribute FQNs applied to newly created TDF files."
+        description: >-
+          "';'-delimited attribute value FQNs applied to newly created TDF files.
+          Required for PEP <= 1.2 (set at least one)."
       windows_installer_src:
         type: str
         description: Path on the target (or URL) to virtru_file_services-x64-rel.msi.
@@ -50,10 +52,22 @@ argument_specs:
         description: Import the driver-signing certificates before installing.
       windows_rootca_cert_src:
         type: str
-        description: Path on the target to rootca.pem (imported to LocalMachine\\Root).
+        description: Path on the target to rootca.pem (imported to <store_location>\\Root).
       windows_testsign_cert_src:
         type: str
-        description: Path on the target to testsign.pem (imported to LocalMachine\\My).
+        description: Path on the target to testsign.pem (imported to <store_location>\\My).
+      windows_cert_store_location:
+        type: str
+        default: LocalMachine
+        choices: [LocalMachine, CurrentUser]
+        description: Certificate store scope. LocalMachine for the SYSTEM services; CurrentUser mirrors the FDE lab GUI steps.
+      windows_testsign_also_root:
+        type: bool
+        default: false
+        description: Also import testsign.pem into Trusted Root (some environments require it).
+      windows_dsp_platform_cert_src:
+        type: str
+        description: Optional path to the DSP platform TLS cert to trust (self-signed / non-domain-joined); imported to Root.
       windows_enable_test_signing:
         type: bool
         default: false

@@ -6,11 +6,13 @@
 # ===========================================================================
 
 # --- Required (become MSI properties -> HKLM\Software\Virtru) ----------------
-windows_platform_endpoint: ""          # e.g. https://platform.dsp.example.com:443
-windows_client_id: ""                  # confidential OIDC client for the PEP
+windows_platform_endpoint: ""          # e.g. https://platform.dsp.example.com:443 (port required; use 443)
+windows_client_id: dsp-windows-filewatcher   # OIDC client for the PEP
 windows_client_secret: ""              # client secret (no_log)
-windows_audience: "{{ windows_platform_endpoint }}"   # token audience expected by DSP
-windows_default_attributes: ""         # ';'-delimited FQNs applied to new TDFs (optional)
+windows_audience: "{{ windows_client_id }}"  # for now the audience matches the client id
+# ';'-delimited attribute value FQNs applied to new TDFs. Required for PEP <= 1.2
+# (set at least one; can also be set later in HKLM\Software\Virtru\DefaultAttributes).
+windows_default_attributes: ""
 
 # --- Installer --------------------------------------------------------------
 windows_installer_src: ""              # path on target (or URL) to virtru_file_services-x64-rel.msi
@@ -22,10 +24,21 @@ windows_install_vc_redist: true
 windows_vc_redist_url: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 
 # Driver signing certs shipped alongside the installer. Provide paths on the
-# target host; imported before the MSI so the drivers load.
+# target host; imported before the MSI so the drivers load (and to avoid the
+# "install this driver anyway" prompt).
 windows_import_certs: true
-windows_rootca_cert_src: ""            # rootca.pem  -> LocalMachine\Root
-windows_testsign_cert_src: ""          # testsign.pem -> LocalMachine\My
+windows_rootca_cert_src: ""            # rootca.pem  -> <store_location>\Root
+windows_testsign_cert_src: ""          # testsign.pem -> <store_location>\My
+# Certificate store scope. The PEP runs as SYSTEM services, so LocalMachine is
+# the robust choice; the FDE lab guide uses CurrentUser (certmgr.msc) for GUI
+# installs. Set to CurrentUser to mirror that.
+windows_cert_store_location: LocalMachine
+# Some environments also require testsign.pem in Trusted Root; enable if needed.
+windows_testsign_also_root: false
+
+# Optional: DSP platform TLS certificate to trust (for self-signed DSP or
+# non-domain-joined clients). Path on the target; imported to <store_location>\Root.
+windows_dsp_platform_cert_src: ""
 
 # Test-signing mode is required until the drivers are cross-signed by Microsoft.
 # Enabling it needs Secure Boot disabled and a reboot; opt in explicitly.
@@ -40,7 +53,9 @@ windows_registry_settings: []
 # --- Behavior ---------------------------------------------------------------
 windows_reboot: true                   # allow reboots when the installer/test-signing require one
 windows_reboot_timeout: 1200
-windows_services:                      # verified running after install
+# Services verified (status only) after install. FDE 1.1 lists fesfpolicy;
+# older DSP docs reference fe2policy — adjust to match your PEP build.
+windows_services:
   - virtruflt
   - virtrusvc
-  - fe2policy
+  - fesfpolicy

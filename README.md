@@ -17,7 +17,7 @@ Tested against Ansible **>=2.15**.
 | Role | PEP | Target OS | Status |
 | ---- | --- | --------- | ------ |
 | [desktop](roles/desktop/README.md) | Virtru Desktop | Windows 11, macOS (Apple Silicon) | Available |
-| [windows](roles/windows/README.md) | Virtru File Services (file-watcher) | Windows 11 22H2+ | Available |
+| [windows](roles/windows/README.md) | Virtru File Services (file-watcher) | Windows 11 24H2 (x64) | Available |
 | sharepoint | SharePoint PEP | Windows Server | Planned |
 | outlook | Outlook PEP | Exchange / Outlook | Planned |
 
