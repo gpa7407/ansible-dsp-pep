@@ -1,0 +1,49 @@
+---
+# ===========================================================================
+# virtru.dsp_pep.desktop — install & configure the Virtru Desktop PEP
+# Targets Windows 11 (amd64) and macOS (Apple Silicon). Only
+# desktop_platform_endpoint is required.
+# ===========================================================================
+
+# --- Required ---------------------------------------------------------------
+desktop_platform_endpoint: ""          # e.g. https://platform.dsp.example.com:8080
+
+# --- Identity ---------------------------------------------------------------
+desktop_public_client_id: dsp-desktop  # public OIDC client (must allow http://127.0.0.1:* redirect)
+
+# --- Installer --------------------------------------------------------------
+# Path (on the target) or URL to the OS-appropriate installer:
+#   Windows: VirtruDesktop-amd64-installer.exe   macOS: VirtruDesktop.pkg
+desktop_installer_src: ""
+desktop_state: present                  # present = install, absent = uninstall (config only for now)
+
+# Windows install specifics
+desktop_windows_install_args: "/S"     # NSIS silent flag
+desktop_install_webview2: true         # install the Edge WebView2 runtime prereq if missing
+desktop_webview2_bootstrapper_url: "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
+# Path used to detect an existing install (so the installer is idempotent).
+desktop_windows_installed_marker: 'C:\Program Files\Virtru Desktop\Virtru Desktop.exe'
+
+# macOS install specifics
+desktop_macos_app_path: "/Applications/Virtru Desktop.app"
+
+# --- Configuration (virtru_desktop.yaml) ------------------------------------
+desktop_manage_config: true
+desktop_config_dir_windows: 'C:\ProgramData\VirtruCorporation\Virtru Desktop'
+desktop_config_dir_macos: '/Library/Application Support/VirtruCorporation/Virtru Desktop'
+desktop_config_filename: virtru_desktop.yaml
+
+# Common config values (see the DSP admin docs for the full schema).
+desktop_insecure_tls_no_verify: false
+desktop_logger_enabled: true
+desktop_logger_level: info             # debug | info | warn | error
+desktop_prefer_system_browser: true
+desktop_enable_attribute_filtering: false
+desktop_tagging_mode: auto_tagging     # auto_tagging | manual
+desktop_watermark: false
+desktop_watermark_text: "${username} / ${email} / ${name}"
+
+# Deep-merged into data_security_platform for any additional keys you need.
+desktop_extra_dsp_config: {}
+# Rendered verbatim under experimental_features when non-empty.
+desktop_experimental_features: {}

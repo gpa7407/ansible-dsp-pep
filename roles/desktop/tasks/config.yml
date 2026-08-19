@@ -1,0 +1,40 @@
+---
+- name: Set the config directory (Windows)
+  ansible.builtin.set_fact:
+    desktop_config_dir: "{{ desktop_config_dir_windows }}"
+  when: ansible_os_family == 'Windows'
+
+- name: Set the config directory (macOS)
+  ansible.builtin.set_fact:
+    desktop_config_dir: "{{ desktop_config_dir_macos }}"
+  when: ansible_system == 'Darwin'
+
+# --- Windows ---
+- name: Ensure the config directory exists (Windows)
+  ansible.windows.win_file:
+    path: "{{ desktop_config_dir }}"
+    state: directory
+  when: ansible_os_family == 'Windows'
+
+- name: Render virtru_desktop.yaml (Windows)
+  ansible.windows.win_template:
+    src: virtru_desktop.yaml.j2
+    dest: "{{ desktop_config_dir }}\\{{ desktop_config_filename }}"
+  when: ansible_os_family == 'Windows'
+
+# --- macOS ---
+- name: Ensure the config directory exists (macOS)
+  ansible.builtin.file:
+    path: "{{ desktop_config_dir }}"
+    state: directory
+    mode: "0755"
+  become: true
+  when: ansible_system == 'Darwin'
+
+- name: Render virtru_desktop.yaml (macOS)
+  ansible.builtin.template:
+    src: virtru_desktop.yaml.j2
+    dest: "{{ desktop_config_dir }}/{{ desktop_config_filename }}"
+    mode: "0644"
+  become: true
+  when: ansible_system == 'Darwin'

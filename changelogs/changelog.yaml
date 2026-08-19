@@ -1,0 +1,15 @@
+ancestor: null
+releases:
+  1.0.0:
+    changes:
+      release_summary: 'Initial release of the virtru.dsp_pep collection. Adds the
+        desktop role
+
+        (virtru.dsp_pep.desktop) to install and configure the Virtru Desktop PEP on
+
+        Windows and macOS.
+
+        '
+    fragments:
+    - 1.0.0.yml
+    release_date: '2026-08-18'

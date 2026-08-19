@@ -1,0 +1,37 @@
+namespace: virtru
+name: dsp_pep
+version: 1.0.0
+readme: README.md
+authors:
+  - Greg Paladin <greg.paladin@virtru.com>
+description: |
+  Ansible collection for installing and configuring Virtru Data Security
+  Platform (DSP) Policy Enforcement Points (PEPs). Each PEP is a role under
+  virtru.dsp_pep (for example virtru.dsp_pep.desktop).
+license_file: COPYING
+tags:
+  - security
+  - tools
+  - dsp
+  - opentdf
+  - virtru
+  - pep
+  - windows
+  - macos
+dependencies:
+  ansible.windows: ">=1.14.0"
+repository: https://github.com/gpa7407/ansible-dsp-pep
+documentation: https://github.com/gpa7407/ansible-dsp-pep/blob/main/README.md
+homepage: https://github.com/gpa7407/ansible-dsp-pep
+issues: https://github.com/gpa7407/ansible-dsp-pep/issues
+build_ignore:
+  - .git
+  - .gitignore
+  - .github
+  - .vscode
+  - .ansible
+  - .ansible-lint
+  - changelogs/.plugin-cache.yaml
+  - '*.tar.gz'
+  - __pycache__
+  - '*.pyc'

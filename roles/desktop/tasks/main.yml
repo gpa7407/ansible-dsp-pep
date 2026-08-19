@@ -1,0 +1,23 @@
+---
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - desktop_platform_endpoint | length > 0
+    fail_msg: "desktop_platform_endpoint is required (e.g. https://platform.dsp.example.com:8080)."
+    quiet: true
+
+- name: Install Virtru Desktop (Windows)
+  ansible.builtin.include_tasks: install_windows.yml
+  when:
+    - ansible_os_family == 'Windows'
+    - desktop_state == 'present'
+
+- name: Install Virtru Desktop (macOS)
+  ansible.builtin.include_tasks: install_macos.yml
+  when:
+    - ansible_system == 'Darwin'
+    - desktop_state == 'present'
+
+- name: Manage Virtru Desktop configuration
+  ansible.builtin.include_tasks: config.yml
+  when: desktop_manage_config | bool

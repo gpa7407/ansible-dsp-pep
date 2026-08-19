@@ -1,0 +1,4 @@
+---
+# antsibull-changelog generates changelogs/changelog.yaml; don't lint generated files.
+exclude_paths:
+  - changelogs/changelog.yaml

@@ -1,0 +1,34 @@
+---
+- name: Require an installer source
+  ansible.builtin.assert:
+    that:
+      - desktop_installer_src | length > 0
+    fail_msg: "desktop_installer_src must point to the VirtruDesktop.pkg (path on the host or URL)."
+    quiet: true
+
+- name: Check whether Virtru Desktop is already installed
+  ansible.builtin.stat:
+    path: "{{ desktop_macos_app_path }}"
+  register: desktop_macos_app
+
+- name: Install Virtru Desktop
+  when: not desktop_macos_app.stat.exists
+  block:
+    - name: Download the installer package (when a URL is given)
+      ansible.builtin.get_url:
+        url: "{{ desktop_installer_src }}"
+        dest: /tmp/VirtruDesktop.pkg
+        mode: "0644"
+      register: desktop_pkg_dl
+      when: desktop_installer_src is match('^https?://')
+
+    - name: Resolve the local package path
+      ansible.builtin.set_fact:
+        desktop_pkg_path: >-
+          {{ desktop_pkg_dl.dest if (desktop_installer_src is match('^https?://')) else desktop_installer_src }}
+
+    - name: Install the package
+      ansible.builtin.command:
+        cmd: "installer -pkg '{{ desktop_pkg_path }}' -target /"
+      become: true
+      changed_when: true

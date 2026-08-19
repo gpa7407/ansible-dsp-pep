@@ -1,0 +1,39 @@
+---
+- name: Require an installer source
+  ansible.builtin.assert:
+    that:
+      - desktop_installer_src | length > 0
+    fail_msg: "desktop_installer_src must point to the VirtruDesktop-amd64-installer.exe (path on the host or URL)."
+    quiet: true
+
+# --- Edge WebView2 runtime (prerequisite) ---
+- name: Check for the Edge WebView2 runtime
+  ansible.windows.win_reg_stat:
+    path: "{{ item }}"
+  loop:
+    - 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BEF-226CD47AA068}'
+    - 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BEF-226CD47AA068}'
+  register: desktop_webview2_reg
+  when: desktop_install_webview2 | bool
+
+- name: Install the Edge WebView2 runtime
+  when:
+    - desktop_install_webview2 | bool
+    - (desktop_webview2_reg.results | default([]) | selectattr('exists') | list | length) == 0
+  block:
+    - name: Download the WebView2 Evergreen bootstrapper
+      ansible.windows.win_get_url:
+        url: "{{ desktop_webview2_bootstrapper_url }}"
+        dest: '{{ ansible_env.TEMP }}\MicrosoftEdgeWebview2Setup.exe'
+      register: desktop_webview2_dl
+
+    - name: Install WebView2 (silent)
+      ansible.windows.win_command: '"{{ desktop_webview2_dl.dest }}" /silent /install'
+
+# --- Virtru Desktop application ---
+- name: Install Virtru Desktop
+  ansible.windows.win_package:
+    path: "{{ desktop_installer_src }}"
+    arguments: "{{ desktop_windows_install_args }}"
+    creates_path: "{{ desktop_windows_installed_marker }}"
+    state: present

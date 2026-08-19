@@ -1,0 +1,26 @@
+# {{ ansible_managed }}
+# Virtru Desktop PEP configuration — managed by virtru.dsp_pep.desktop
+logger:
+  enabled: {{ desktop_logger_enabled | bool | lower }}
+  level: {{ desktop_logger_level }}
+data_security_platform:
+  platform_endpoint: "{{ desktop_platform_endpoint }}"
+  public_client_id: "{{ desktop_public_client_id }}"
+  insecure_tls_no_verify: {{ desktop_insecure_tls_no_verify | bool | lower }}
+  enable_attribute_filtering: {{ desktop_enable_attribute_filtering | bool | lower }}
+  prefer_system_browser: {{ desktop_prefer_system_browser | bool | lower }}
+  tagging:
+    mode: {{ desktop_tagging_mode }}
+{% if desktop_extra_dsp_config %}
+{{ desktop_extra_dsp_config | to_nice_yaml(indent=2) | indent(2, first=True) }}
+{% endif %}
+{% if desktop_watermark or desktop_experimental_features %}
+experimental_features:
+{% if desktop_watermark %}
+  watermark: true
+  watermark_text: "{{ desktop_watermark_text }}"
+{% endif %}
+{% if desktop_experimental_features %}
+{{ desktop_experimental_features | to_nice_yaml(indent=2) | indent(2, first=True) }}
+{% endif %}
+{% endif %}

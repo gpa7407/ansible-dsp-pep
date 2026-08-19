@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+*.tar.gz
+.vscode/
+.ansible/
+changelogs/.plugin-cache.yaml

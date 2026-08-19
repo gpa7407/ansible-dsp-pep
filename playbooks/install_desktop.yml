@@ -1,0 +1,14 @@
+---
+# Install the Virtru Desktop PEP.
+#
+#   ansible-playbook virtru.dsp_pep.install_desktop -i inventory.ini \
+#     -e desktop_platform_endpoint=https://platform.dsp.example.com:8080 \
+#     -e 'desktop_installer_src=C:\Installers\VirtruDesktop-amd64-installer.exe'
+#
+# Provide the desktop_* variables via inventory/group_vars or -e. See
+# roles/desktop/defaults/main.yml for all options.
+- name: Install the Virtru Desktop PEP
+  hosts: desktop_endpoints
+  gather_facts: true
+  roles:
+    - role: virtru.dsp_pep.desktop

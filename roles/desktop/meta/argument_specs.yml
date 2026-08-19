@@ -1,0 +1,98 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure the Virtru Desktop PEP
+    description:
+      - Installs the Virtru Desktop application on Windows or macOS and manages
+        its C(virtru_desktop.yaml) configuration.
+      - Requires an operational DSP platform endpoint and a public OIDC client.
+    options:
+      desktop_platform_endpoint:
+        type: str
+        required: true
+        description: DSP platform endpoint URL including port (e.g. C(https://platform.dsp.example.com:8080)).
+      desktop_public_client_id:
+        type: str
+        default: dsp-desktop
+        description: Public OIDC client id. Must allow the loopback redirect C(http://127.0.0.1:*).
+      desktop_installer_src:
+        type: str
+        description: Path on the target (or URL) to the OS-appropriate installer (.exe for Windows, .pkg for macOS).
+      desktop_state:
+        type: str
+        default: present
+        choices: [present, absent]
+        description: Whether the Desktop PEP should be installed.
+      desktop_windows_install_args:
+        type: str
+        default: "/S"
+        description: Silent-install arguments passed to the Windows installer.
+      desktop_install_webview2:
+        type: bool
+        default: true
+        description: Install the Edge WebView2 runtime prerequisite on Windows if missing.
+      desktop_webview2_bootstrapper_url:
+        type: str
+        description: Download URL for the Edge WebView2 Evergreen bootstrapper.
+      desktop_windows_installed_marker:
+        type: str
+        description: Path to the installed Virtru Desktop executable, used to make the Windows install idempotent.
+      desktop_macos_app_path:
+        type: str
+        default: /Applications/Virtru Desktop.app
+        description: Installed application bundle path on macOS, used for idempotency.
+      desktop_manage_config:
+        type: bool
+        default: true
+        description: Render and manage virtru_desktop.yaml.
+      desktop_config_dir_windows:
+        type: str
+        description: System-wide config directory on Windows.
+      desktop_config_dir_macos:
+        type: str
+        description: System-wide config directory on macOS.
+      desktop_config_filename:
+        type: str
+        default: virtru_desktop.yaml
+        description: Configuration file name.
+      desktop_insecure_tls_no_verify:
+        type: bool
+        default: false
+        description: Skip TLS verification to the DSP platform (labs only).
+      desktop_logger_enabled:
+        type: bool
+        default: true
+        description: Enable application logging.
+      desktop_logger_level:
+        type: str
+        default: info
+        choices: [debug, info, warn, error]
+        description: Log level.
+      desktop_prefer_system_browser:
+        type: bool
+        default: true
+        description: Use the system default browser for SSO instead of an embedded window.
+      desktop_enable_attribute_filtering:
+        type: bool
+        default: false
+        description: Scope encryption options to what the user can access.
+      desktop_tagging_mode:
+        type: str
+        default: auto_tagging
+        choices: [auto_tagging, manual]
+        description: Auto-tagging mode.
+      desktop_watermark:
+        type: bool
+        default: false
+        description: Enable watermarking (experimental feature).
+      desktop_watermark_text:
+        type: str
+        description: Watermark text template.
+      desktop_extra_dsp_config:
+        type: dict
+        default: {}
+        description: Extra keys merged into the data_security_platform config section.
+      desktop_experimental_features:
+        type: dict
+        default: {}
+        description: Rendered verbatim under experimental_features when non-empty.
