@@ -31,21 +31,13 @@ ansible-galaxy collection install virtru.dsp_pep
 
 ## Usage
 
-Install the Virtru Desktop PEP on a Windows endpoint:
+Each PEP is a role; its variables, requirements, and examples are documented in
+that role's README:
 
-```yaml
-- name: Install Virtru Desktop PEP
-  hosts: windows_endpoints
-  roles:
-    - role: virtru.dsp_pep.desktop
-      vars:
-        desktop_platform_endpoint: "https://platform.dsp.example.com:8080"
-        desktop_public_client_id: dsp-desktop
-        desktop_installer_src: "C:\\Installers\\VirtruDesktop-amd64-installer.exe"
-```
+- **desktop** — [roles/desktop/README.md](roles/desktop/README.md)
+- **windows** (Virtru File Services) — [roles/windows/README.md](roles/windows/README.md)
 
-See [`roles/desktop/README.md`](roles/desktop/README.md) for all variables and a
-macOS example.
+Ready-to-run example playbooks are in [`playbooks/`](playbooks/).
 
 ## License
 
