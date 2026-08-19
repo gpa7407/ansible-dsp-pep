@@ -1,0 +1,77 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure Virtru File Services (Windows file-watcher PEP)
+    description:
+      - Installs the Virtru File Services MSI (minifilter driver, virtrusvc,
+        fe2policy) on Windows and writes its configuration to the registry.
+      - Handles the VC++ runtime, driver-signing certificate import, optional
+        test-signing mode, and reboots.
+    options:
+      windows_platform_endpoint:
+        type: str
+        required: true
+        description: DSP platform endpoint URL including port (e.g. C(https://platform.dsp.example.com:443)).
+      windows_client_id:
+        type: str
+        required: true
+        description: Confidential OIDC client id for the PEP.
+      windows_client_secret:
+        type: str
+        required: true
+        description: OIDC client secret for the PEP.
+      windows_audience:
+        type: str
+        description: Token audience expected by DSP. Defaults to the platform endpoint.
+      windows_default_attributes:
+        type: str
+        description: "';'-delimited attribute FQNs applied to newly created TDF files."
+      windows_installer_src:
+        type: str
+        description: Path on the target (or URL) to virtru_file_services-x64-rel.msi.
+      windows_state:
+        type: str
+        default: present
+        choices: [present, absent]
+        description: Whether File Services should be installed.
+      windows_install_log:
+        type: str
+        description: Path for the MSI verbose install log on the target.
+      windows_install_vc_redist:
+        type: bool
+        default: true
+        description: Install the Visual C++ 2022 x64 runtime prerequisite.
+      windows_vc_redist_url:
+        type: str
+        description: Download URL for the VC++ redistributable.
+      windows_import_certs:
+        type: bool
+        default: true
+        description: Import the driver-signing certificates before installing.
+      windows_rootca_cert_src:
+        type: str
+        description: Path on the target to rootca.pem (imported to LocalMachine\\Root).
+      windows_testsign_cert_src:
+        type: str
+        description: Path on the target to testsign.pem (imported to LocalMachine\\My).
+      windows_enable_test_signing:
+        type: bool
+        default: false
+        description: Enable Windows test-signing mode (needs Secure Boot disabled + reboot).
+      windows_registry_settings:
+        type: list
+        elements: dict
+        default: []
+        description: Optional extra registry values applied via win_regedit (path/name/data/type).
+      windows_reboot:
+        type: bool
+        default: true
+        description: Allow reboots when the installer or test-signing require one.
+      windows_reboot_timeout:
+        type: int
+        default: 1200
+        description: Reboot wait timeout (seconds).
+      windows_services:
+        type: list
+        elements: str
+        description: Services verified running after install.

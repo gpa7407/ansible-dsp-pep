@@ -10,6 +10,4 @@ v1.0.0
 Release Summary
 ---------------
 
-Initial release of the virtru.dsp_pep collection. Adds the desktop role
-(virtru.dsp_pep.desktop) to install and configure the Virtru Desktop PEP on
-Windows and macOS.
+Initial release of the virtru.dsp_pep collection for installing DSP Policy Enforcement Points (PEPs), one role per PEP. Includes the desktop role (Virtru Desktop on Windows/macOS) and the windows role (Virtru File Services, the Windows file-watcher PEP).

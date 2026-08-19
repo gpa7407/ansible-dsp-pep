@@ -1,0 +1,51 @@
+---
+- name: Install the Visual C++ 2022 x64 runtime
+  ansible.windows.win_package:
+    path: "{{ windows_vc_redist_url }}"
+    arguments:
+      - /install
+      - /quiet
+      - /norestart
+    creates_path: 'C:\Windows\System32\vcruntime140.dll'
+    state: present
+  when: windows_install_vc_redist | bool
+
+- name: Import the driver-signing root CA certificate
+  ansible.windows.win_certificate_store:
+    path: "{{ windows_rootca_cert_src }}"
+    store_location: LocalMachine
+    store_name: Root
+    state: present
+  when:
+    - windows_import_certs | bool
+    - windows_rootca_cert_src | length > 0
+
+- name: Import the test-signing certificate
+  ansible.windows.win_certificate_store:
+    path: "{{ windows_testsign_cert_src }}"
+    store_location: LocalMachine
+    store_name: My
+    state: present
+  when:
+    - windows_import_certs | bool
+    - windows_testsign_cert_src | length > 0
+
+- name: Enable Windows test-signing mode
+  when: windows_enable_test_signing | bool
+  block:
+    - name: Query current boot configuration
+      ansible.windows.win_shell: bcdedit /enum '{current}'
+      register: windows_bcd
+      changed_when: false
+
+    - name: Set TESTSIGNING ON
+      ansible.windows.win_command: bcdedit /set TESTSIGNING ON
+      when: not (windows_bcd.stdout is search('testsigning\s+Yes', ignorecase=True))
+      register: windows_testsigning
+
+    - name: Reboot to apply test-signing
+      ansible.windows.win_reboot:
+        reboot_timeout: "{{ windows_reboot_timeout }}"
+      when:
+        - windows_reboot | bool
+        - windows_testsigning is changed

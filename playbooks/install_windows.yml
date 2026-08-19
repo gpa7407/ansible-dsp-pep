@@ -1,0 +1,16 @@
+---
+# Install the Virtru File Services (Windows file-watcher) PEP.
+#
+#   ansible-playbook virtru.dsp_pep.install_windows -i inventory.ini \
+#     -e windows_platform_endpoint=https://platform.dsp.example.com:443 \
+#     -e windows_client_id=dsp-windows-filewatcher \
+#     -e windows_client_secret=... \
+#     -e 'windows_installer_src=C:\Installers\virtru_file_services-x64-rel.msi'
+#
+# Provide the windows_* variables via inventory/group_vars or -e. See
+# roles/windows/defaults/main.yml for all options.
+- name: Install the Virtru File Services PEP
+  hosts: windows_filewatcher
+  gather_facts: true
+  roles:
+    - role: virtru.dsp_pep.windows

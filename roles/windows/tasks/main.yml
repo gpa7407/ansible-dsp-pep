@@ -1,0 +1,31 @@
+---
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - windows_platform_endpoint | length > 0
+      - windows_client_id | length > 0
+      - windows_client_secret | length > 0
+    fail_msg: >-
+      windows_platform_endpoint, windows_client_id and windows_client_secret are required.
+    quiet: true
+
+- name: Enforce Windows target
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Windows'
+    fail_msg: "The windows (File Services) role targets Windows hosts only."
+    quiet: true
+
+- name: Prerequisites (VC++ runtime, driver certs, test-signing)
+  ansible.builtin.include_tasks: prereqs.yml
+  when: windows_state == 'present'
+
+- name: Install Virtru File Services
+  ansible.builtin.include_tasks: install.yml
+  when: windows_state == 'present'
+
+- name: Apply optional registry tuning
+  ansible.builtin.include_tasks: registry.yml
+  when:
+    - windows_state == 'present'
+    - windows_registry_settings | length > 0

@@ -1,0 +1,46 @@
+---
+# ===========================================================================
+# virtru.dsp_pep.windows — install & configure Virtru File Services (the
+# Windows file-watcher PEP: minifilter driver + virtrusvc + fe2policy).
+# Windows 11 22H2+ (amd64) only.
+# ===========================================================================
+
+# --- Required (become MSI properties -> HKLM\Software\Virtru) ----------------
+windows_platform_endpoint: ""          # e.g. https://platform.dsp.example.com:443
+windows_client_id: ""                  # confidential OIDC client for the PEP
+windows_client_secret: ""              # client secret (no_log)
+windows_audience: "{{ windows_platform_endpoint }}"   # token audience expected by DSP
+windows_default_attributes: ""         # ';'-delimited FQNs applied to new TDFs (optional)
+
+# --- Installer --------------------------------------------------------------
+windows_installer_src: ""              # path on target (or URL) to virtru_file_services-x64-rel.msi
+windows_state: present
+windows_install_log: 'C:\Windows\Temp\virtru_file_services_install.log'
+
+# --- Prerequisites ----------------------------------------------------------
+windows_install_vc_redist: true
+windows_vc_redist_url: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+
+# Driver signing certs shipped alongside the installer. Provide paths on the
+# target host; imported before the MSI so the drivers load.
+windows_import_certs: true
+windows_rootca_cert_src: ""            # rootca.pem  -> LocalMachine\Root
+windows_testsign_cert_src: ""          # testsign.pem -> LocalMachine\My
+
+# Test-signing mode is required until the drivers are cross-signed by Microsoft.
+# Enabling it needs Secure Boot disabled and a reboot; opt in explicitly.
+windows_enable_test_signing: false
+
+# --- Optional registry tuning ------------------------------------------------
+# List of {path, name, data, type} applied with ansible.windows.win_regedit.
+# See the File Services config docs for available keys (virtruflt/virtrusvc/
+# fe2policy parameters).
+windows_registry_settings: []
+
+# --- Behavior ---------------------------------------------------------------
+windows_reboot: true                   # allow reboots when the installer/test-signing require one
+windows_reboot_timeout: 1200
+windows_services:                      # verified running after install
+  - virtruflt
+  - virtrusvc
+  - fe2policy

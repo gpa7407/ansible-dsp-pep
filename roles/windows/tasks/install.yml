@@ -1,0 +1,45 @@
+---
+- name: Require an installer source
+  ansible.builtin.assert:
+    that:
+      - windows_installer_src | length > 0
+    fail_msg: "windows_installer_src must point to virtru_file_services-x64-rel.msi (path on the host or URL)."
+    quiet: true
+
+- name: Install Virtru File Services (MSI)
+  ansible.windows.win_package:
+    path: "{{ windows_installer_src }}"
+    arguments:
+      - "CLIENT_ID={{ windows_client_id }}"
+      - "CLIENT_SECRET={{ windows_client_secret }}"
+      - "AUDIENCE={{ windows_audience }}"
+      - "PLATFORM_ENDPOINT={{ windows_platform_endpoint }}"
+      - "DEFAULT_ATTRIBUTES={{ windows_default_attributes }}"
+      - /L*V
+      - "{{ windows_install_log }}"
+    state: present
+  register: windows_fs_install
+  no_log: true
+
+- name: Reboot after install when required
+  ansible.windows.win_reboot:
+    reboot_timeout: "{{ windows_reboot_timeout }}"
+  when:
+    - windows_reboot | bool
+    - windows_fs_install.reboot_required | default(false)
+
+- name: Gather File Services service status
+  ansible.windows.win_service_info:
+    name: "{{ item }}"
+  loop: "{{ windows_services }}"
+  register: windows_svc_info
+  failed_when: false
+
+- name: Report File Services service state
+  ansible.builtin.debug:
+    msg: >-
+      {{ item.item }}:
+      {{ (item.services[0].state | default('not found')) if (item.services | default([])) else 'not found' }}
+  loop: "{{ windows_svc_info.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"

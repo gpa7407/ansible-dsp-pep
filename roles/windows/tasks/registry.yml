@@ -1,0 +1,14 @@
+---
+# Optional registry tuning (virtruflt / virtrusvc / fe2policy parameters).
+# NOTE: per the File Services docs, changes take effect after restarting the
+# corresponding service (or a reboot).
+- name: Apply registry settings
+  ansible.windows.win_regedit:
+    path: "{{ item.path }}"
+    name: "{{ item.name | default(omit) }}"
+    data: "{{ item.data | default(omit) }}"
+    type: "{{ item.type | default('string') }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ windows_registry_settings }}"
+  loop_control:
+    label: "{{ item.path }} \\ {{ item.name | default('(default)') }}"

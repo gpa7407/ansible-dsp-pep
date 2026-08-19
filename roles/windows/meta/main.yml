@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  role_name: windows
+  namespace: virtru
+  author: Greg Paladin
+  description: Install and configure Virtru File Services (the Windows file-watcher PEP).
+  company: Virtru
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Windows
+      versions:
+        - "2022"
+  galaxy_tags:
+    - dsp
+    - virtru
+    - pep
+    - filewatcher
+    - fileservices
+    - tdf
+    - windows
+
+collections:
+  - ansible.windows
+
+dependencies: []
