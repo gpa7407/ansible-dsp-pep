@@ -33,17 +33,46 @@ desktop_config_dir_windows: 'C:\ProgramData\VirtruCorporation\Virtru Desktop'
 desktop_config_dir_macos: '/Library/Application Support/VirtruCorporation/Virtru Desktop'
 desktop_config_filename: virtru_desktop.yaml
 
-# Common config values (see the DSP admin docs for the full schema).
-desktop_insecure_tls_no_verify: false
+# --- logger ---
 desktop_logger_enabled: true
 desktop_logger_level: info             # debug | info | warn | error
-desktop_prefer_system_browser: true
+
+# --- data_security_platform ---
+desktop_oidc_scopes:                   # "openid" is always enforced
+  - openid
+  - profile
+  - email
+  - offline_access
+desktop_insecure_tls_no_verify: false
 desktop_enable_attribute_filtering: false
+desktop_default_assertion_type: ""     # empty = no default assertion applied when tagging
+# When true, marking assertions in protected files are accepted WITHOUT signature
+# verification. Leave false unless required for interoperability.
+desktop_disable_assertion_sig_check: false
+# Discouraged: when true, protected files whose internal structure does not match
+# the expected format are still recognized. Only for third-party interoperability.
+desktop_skip_manifest_schema_validation: false
+desktop_enable_legacy_encryption: false
+desktop_default_port: 0                # OAuth2 callback port; 0 = OS chooses (needs 127.0.0.1:* redirect)
+desktop_prefer_system_browser: true
+desktop_preview_ttl_seconds: -1        # <1 or unset defaults to 3600 (max 3600)
 desktop_tagging_mode: auto_tagging     # auto_tagging | manual
+desktop_use_tdf_extension: true        # append .tdf to encrypted output file names
+
+# --- experimental_features ---
+desktop_default_locale: en             # en | es | fr
 desktop_watermark: false
 desktop_watermark_text: "${username} / ${email} / ${name}"
+desktop_open_in_preview: true
+desktop_auto_open_native_app: false    # only used when open_in_preview is false
+desktop_read_metadata_names:
+  - metadata.xml
+  - metadata.ztdf
+desktop_write_metadata_name: metadata.ztdf
+desktop_office_conversion_enabled: true
+desktop_extraction_file_size_threshold: -1     # <0 defaults to 10MB
+desktop_extraction_max_image_dimension: -1     # <0 defaults to 1024px
+desktop_extraction_max_extracted_text_bytes: -1  # <0 defaults to 500KB
 
-# Deep-merged into data_security_platform for any additional keys you need.
+# Deep-merged into data_security_platform for any future keys not exposed above.
 desktop_extra_dsp_config: {}
-# Rendered verbatim under experimental_features when non-empty.
-desktop_experimental_features: {}

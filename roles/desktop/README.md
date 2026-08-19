@@ -32,8 +32,14 @@ What it does:
 | `desktop_manage_config` | `true` | Render `virtru_desktop.yaml` |
 | `desktop_insecure_tls_no_verify` | `false` | Skip TLS verification (labs only) |
 
-See `defaults/main.yml` / `meta/argument_specs.yml` for the full list (logging,
-tagging, watermark, `desktop_extra_dsp_config`, `desktop_experimental_features`).
+Every documented `virtru_desktop.yaml` option is exposed as a `desktop_*`
+variable (logging, OIDC scopes, assertion/manifest handling —
+`desktop_disable_assertion_sig_check`, `desktop_skip_manifest_schema_validation`,
+`desktop_enable_legacy_encryption` — preview TTL, tagging, watermarking,
+extraction limits, etc.). App-managed/fixed fields (`schema_version`,
+`legacy_schema`) are intentionally **not** exposed so the PEP can't be
+misconfigured. See `defaults/main.yml` / `meta/argument_specs.yml` for the full
+list, and `desktop_extra_dsp_config` for any future keys not yet exposed.
 
 Config paths written:
 

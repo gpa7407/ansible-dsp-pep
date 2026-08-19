@@ -1,26 +1,45 @@
 # {{ ansible_managed }}
 # Virtru Desktop PEP configuration — managed by virtru.dsp_pep.desktop
+# schema_version and legacy_schema are fixed by the PEP and must not change.
+schema_version: "1"
 logger:
   enabled: {{ desktop_logger_enabled | bool | lower }}
   level: {{ desktop_logger_level }}
 data_security_platform:
   platform_endpoint: "{{ desktop_platform_endpoint }}"
   public_client_id: "{{ desktop_public_client_id }}"
+  oidc_scopes: {{ desktop_oidc_scopes | to_json }}
   insecure_tls_no_verify: {{ desktop_insecure_tls_no_verify | bool | lower }}
   enable_attribute_filtering: {{ desktop_enable_attribute_filtering | bool | lower }}
+  default_assertion_type: "{{ desktop_default_assertion_type }}"
+  disable_assertion_sig_check: {{ desktop_disable_assertion_sig_check | bool | lower }}
+  skip_manifest_schema_validation: {{ desktop_skip_manifest_schema_validation | bool | lower }}
+  enable_legacy_encryption: {{ desktop_enable_legacy_encryption | bool | lower }}
+  legacy_schema: "4.2.2"
+  default_port: {{ desktop_default_port | int }}
   prefer_system_browser: {{ desktop_prefer_system_browser | bool | lower }}
+  preview_ttl_seconds: {{ desktop_preview_ttl_seconds | int }}
   tagging:
     mode: {{ desktop_tagging_mode }}
+  use_tdf_extension: {{ desktop_use_tdf_extension | bool | lower }}
 {% if desktop_extra_dsp_config %}
 {{ desktop_extra_dsp_config | to_nice_yaml(indent=2) | indent(2, first=True) }}
 {% endif %}
-{% if desktop_watermark or desktop_experimental_features %}
 experimental_features:
-{% if desktop_watermark %}
-  watermark: true
+  default_locale: "{{ desktop_default_locale }}"
+  watermark: {{ desktop_watermark | bool | lower }}
   watermark_text: "{{ desktop_watermark_text }}"
-{% endif %}
-{% if desktop_experimental_features %}
-{{ desktop_experimental_features | to_nice_yaml(indent=2) | indent(2, first=True) }}
-{% endif %}
-{% endif %}
+  open_in_preview: {{ desktop_open_in_preview | bool | lower }}
+  auto_open_native_app: {{ desktop_auto_open_native_app | bool | lower }}
+  file_metadata:
+    read_metadata_names:
+{% for name in desktop_read_metadata_names %}
+      - "{{ name }}"
+{% endfor %}
+    write_metadata_name: "{{ desktop_write_metadata_name }}"
+  office_conversion:
+    enabled: {{ desktop_office_conversion_enabled | bool | lower }}
+  extraction_settings:
+    file_size_threshold: {{ desktop_extraction_file_size_threshold | int }}
+    max_image_dimension: {{ desktop_extraction_max_image_dimension | int }}
+    max_extracted_text_bytes: {{ desktop_extraction_max_extracted_text_bytes | int }}

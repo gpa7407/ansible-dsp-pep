@@ -55,10 +55,7 @@ argument_specs:
         type: str
         default: virtru_desktop.yaml
         description: Configuration file name.
-      desktop_insecure_tls_no_verify:
-        type: bool
-        default: false
-        description: Skip TLS verification to the DSP platform (labs only).
+      # logger
       desktop_logger_enabled:
         type: bool
         default: true
@@ -68,31 +65,101 @@ argument_specs:
         default: info
         choices: [debug, info, warn, error]
         description: Log level.
-      desktop_prefer_system_browser:
+      # data_security_platform
+      desktop_oidc_scopes:
+        type: list
+        elements: str
+        description: OAuth2/OIDC scopes requested at sign-in ("openid" is always enforced).
+      desktop_insecure_tls_no_verify:
         type: bool
-        default: true
-        description: Use the system default browser for SSO instead of an embedded window.
+        default: false
+        description: Skip TLS verification to the DSP platform (labs only).
       desktop_enable_attribute_filtering:
         type: bool
         default: false
         description: Scope encryption options to what the user can access.
+      desktop_default_assertion_type:
+        type: str
+        description: Default assertion format used when tagging content (empty for none).
+      desktop_disable_assertion_sig_check:
+        type: bool
+        default: false
+        description: Accept marking assertions without verifying their signatures (interoperability only).
+      desktop_skip_manifest_schema_validation:
+        type: bool
+        default: false
+        description: Recognize protected files that do not match the expected format (discouraged; interoperability only).
+      desktop_enable_legacy_encryption:
+        type: bool
+        default: false
+        description: Enable legacy encryption support.
+      desktop_default_port:
+        type: int
+        default: 0
+        description: OAuth2 callback port; 0 lets the OS choose (requires a 127.0.0.1:* redirect).
+      desktop_prefer_system_browser:
+        type: bool
+        default: true
+        description: Use the system default browser for SSO instead of an embedded window.
+      desktop_preview_ttl_seconds:
+        type: int
+        default: -1
+        description: Preview time-to-live in seconds (values < 1 default to 3600; max 3600).
       desktop_tagging_mode:
         type: str
         default: auto_tagging
         choices: [auto_tagging, manual]
         description: Auto-tagging mode.
+      desktop_use_tdf_extension:
+        type: bool
+        default: true
+        description: Append .tdf to encrypted output file names.
+      # experimental_features
+      desktop_default_locale:
+        type: str
+        default: en
+        choices: [en, es, fr]
+        description: Application UI locale.
       desktop_watermark:
         type: bool
         default: false
-        description: Enable watermarking (experimental feature).
+        description: Enable watermarking.
       desktop_watermark_text:
         type: str
         description: Watermark text template.
+      desktop_open_in_preview:
+        type: bool
+        default: true
+        description: Open decrypted files in Virtru Desktop Preview instead of the native handler.
+      desktop_auto_open_native_app:
+        type: bool
+        default: false
+        description: Auto-open decrypted files in the native app (only when open_in_preview is false).
+      desktop_read_metadata_names:
+        type: list
+        elements: str
+        description: Extended-attribute / ADS names read for metadata during tagging.
+      desktop_write_metadata_name:
+        type: str
+        default: metadata.ztdf
+        description: Extended-attribute / ADS name used to write the ZTDF manifest policy.
+      desktop_office_conversion_enabled:
+        type: bool
+        default: true
+        description: Enable Office document conversion for previewing.
+      desktop_extraction_file_size_threshold:
+        type: int
+        default: -1
+        description: File-size threshold for reduced tagging extraction (< 0 defaults to 10MB).
+      desktop_extraction_max_image_dimension:
+        type: int
+        default: -1
+        description: Max image width/height (px) during extraction (< 0 defaults to 1024).
+      desktop_extraction_max_extracted_text_bytes:
+        type: int
+        default: -1
+        description: Max text bytes included in tagging requests (< 0 defaults to 500KB).
       desktop_extra_dsp_config:
         type: dict
         default: {}
-        description: Extra keys merged into the data_security_platform config section.
-      desktop_experimental_features:
-        type: dict
-        default: {}
-        description: Rendered verbatim under experimental_features when non-empty.
+        description: Extra keys merged into the data_security_platform config section (forward-compat).
