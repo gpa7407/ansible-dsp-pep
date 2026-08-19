@@ -1,0 +1,52 @@
+---
+- name: Configure the Virtru Claims Provider config object
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+      $farm = Get-SPFarm
+      $obj = $farm.GetObject('{{ sharepoint_rer_ccp_object_id }}')
+      if (-not $obj) { throw "CCP config object {{ sharepoint_rer_ccp_object_id }} not found; is the CCP deployed?" }
+      $changed = $false
+      if ($obj.PlatformEndpoint -ne '{{ sharepoint_rer_platform_endpoint }}') {
+        $obj.PlatformEndpoint = '{{ sharepoint_rer_platform_endpoint }}'; $changed = $true
+      }
+      if ($obj.ClientSecret -ne '{{ sharepoint_rer_client_secret }}') {
+        $obj.ClientSecret = '{{ sharepoint_rer_client_secret }}'; $changed = $true
+      }
+      {% if sharepoint_rer_augment_timeout | string | length > 0 %}
+      if ($obj.AugmentTimeout -ne {{ sharepoint_rer_augment_timeout }}) {
+        $obj.AugmentTimeout = {{ sharepoint_rer_augment_timeout }}; $changed = $true
+      }
+      {% endif %}
+      {% if sharepoint_rer_http_timeout | string | length > 0 %}
+      if ($obj.HttpTimeout -ne {{ sharepoint_rer_http_timeout }}) {
+        $obj.HttpTimeout = {{ sharepoint_rer_http_timeout }}; $changed = $true
+      }
+      {% endif %}
+      if ($changed) { $obj.Update() }
+      $Ansible.Changed = $changed
+  no_log: true
+  notify: Restart SharePoint services
+
+- name: Derive the CCP encoding (claim type code point)
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+      $e = Get-SPClaimTypeEncoding | Where-Object { $_.ClaimType -eq 'http://schemas.virtru.abac/group' }
+      if (-not $e) { throw "Virtru claim type encoding not found; is the CCP deployed?" }
+      $codePoint = [int][char]$e.EncodingCharacter
+      $hex = "{0:X4}" -f $codePoint
+      $enc = "c:0\u" + $hex + ".c|virtrucp|"
+      $Ansible.Changed = $false
+      $Ansible.Result = @{ ccp_encoding = $enc }
+  register: sharepoint_rer_ccp_enc
+
+- name: Publish the CCP encoding as a host fact
+  ansible.builtin.set_fact:
+    sharepoint_rer_ccp_encoding: "{{ sharepoint_rer_ccp_enc.result.ccp_encoding }}"
+
+- name: Show the CCP encoding (use this for the DSP values fragment)
+  ansible.builtin.debug:
+    msg: "CCP encoding for the DSP sharepoint stanza: {{ sharepoint_rer_ccp_encoding }}"

@@ -1,0 +1,152 @@
+---
+argument_specs:
+  main:
+    short_description: Install/configure the legacy Virtru RER SharePoint PEP
+    description:
+      - Branches on ansible_os_family. On Windows (the SharePoint server) it
+        installs and configures the Virtru Claims Provider (CCP) and derives the
+        CCP encoding. On Linux (the DSP/Kubernetes host) it renders the SharePoint
+        values fragment, runs helm upgrade + rollout restart, and registers
+        document libraries via the /sharepoint/sitelist API with verification.
+      - Run it in a two-play playbook (Windows play then DSP play).
+    options:
+      sharepoint_rer_state:
+        type: str
+        default: present
+        choices: [present, absent]
+        description: Install/configure, or uninstall the CCP and unregister sitelists.
+      sharepoint_rer_validate_certs:
+        type: bool
+        default: false
+        description: Verify TLS on the DSP/Keycloak HTTP calls (false for self-signed labs).
+      sharepoint_rer_ccp_wsp_src:
+        type: str
+        description: Path (controller) or URL to Virtru.CP.wsp. Required on the SharePoint server.
+      sharepoint_rer_ccp_wsp_dest:
+        type: str
+        description: Destination path for the .wsp on the SharePoint server.
+      sharepoint_rer_solution_name:
+        type: str
+        default: virtru.cp.wsp
+        description: SharePoint farm solution name.
+      sharepoint_rer_assembly_bindings_src:
+        type: str
+        description: Path/URL to assembly-bindings.config (CCP zip) used to patch Machine.config. Empty skips the patch.
+      sharepoint_rer_assembly_bindings_dest:
+        type: str
+        description: Destination path for assembly-bindings.config on the SharePoint server.
+      sharepoint_rer_machine_config:
+        type: str
+        description: Path to the .NET Framework64 Machine.config to patch.
+      sharepoint_rer_ccp_object_id:
+        type: str
+        description: Virtru CCP configuration object id (constant).
+      sharepoint_rer_platform_endpoint:
+        type: str
+        description: Platform endpoint written to the CCP config and DSP values. Required on the SharePoint server (state=present).
+      sharepoint_rer_client_secret:
+        type: str
+        description: OIDC client secret (same as the DSP SharePoint PEP config). Required on the SharePoint server (state=present).
+      sharepoint_rer_augment_timeout:
+        type: str
+        description: Optional CCP AugmentTimeout (ms).
+      sharepoint_rer_http_timeout:
+        type: str
+        description: Optional CCP HttpTimeout (ms).
+      sharepoint_rer_ccp_encoding:
+        type: str
+        description: CCP encoding string. Derived on the SharePoint server; supply it (or read from hostvars) for the DSP play.
+      sharepoint_rer_run_helm:
+        type: bool
+        default: true
+        description: Render the values fragment and run helm upgrade + rollout restart (DSP host).
+      sharepoint_rer_namespace:
+        type: str
+        default: virtru
+        description: Kubernetes namespace of the DSP release.
+      sharepoint_rer_helm_release:
+        type: str
+        default: dsp
+        description: Helm release name.
+      sharepoint_rer_chart:
+        type: str
+        description: Path to the data-security-platform chart .tgz. Required when run_helm.
+      sharepoint_rer_values_files:
+        type: list
+        elements: str
+        default: []
+        description: Existing --values files to keep on the helm command.
+      sharepoint_rer_fragment_path:
+        type: str
+        description: Where to write the generated SharePoint values fragment on the DSP host.
+      sharepoint_rer_deployment:
+        type: str
+        default: dsp-platform
+        description: Deployment to rollout-restart after the upgrade.
+      sharepoint_rer_service_host_name:
+        type: str
+        default: sharepoint
+        description: sharepoint.service_host_name value.
+      sharepoint_rer_platform_auth_endpoint:
+        type: str
+        description: sharepoint.platform_auth_endpoint value (optional).
+      sharepoint_rer_token_endpoint:
+        type: str
+        description: sharepoint.token_endpoint value (optional).
+      sharepoint_rer_client_id:
+        type: str
+        default: dsp-sharepoint
+        description: sharepoint.client_id value.
+      sharepoint_rer_strict_assertions:
+        type: bool
+        default: false
+        description: sharepoint.strict_assertions value.
+      sharepoint_rer_farm_fqdn:
+        type: str
+        description: SharePoint farm FQDN (stored with dots replaced by underscores). Required on the DSP host.
+      sharepoint_rer_auth_type:
+        type: str
+        default: ntlm
+        choices: [ntlm, adfs]
+        description: Farm auth type.
+      sharepoint_rer_domain:
+        type: str
+        description: Service-account domain.
+      sharepoint_rer_username:
+        type: str
+        description: Service-account username.
+      sharepoint_rer_password:
+        type: str
+        description: Service-account password.
+      sharepoint_rer_system_event_users:
+        type: str
+        description: Optional system_event_users value.
+      sharepoint_rer_username_regex:
+        type: str
+        description: Optional username_regex value.
+      sharepoint_rer_extra_values:
+        type: dict
+        default: {}
+        description: Extra keys merged into the sharepoint stanza (e.g. draft_mode_enabled, rer_secret).
+      sharepoint_rer_register_sitelists:
+        type: bool
+        default: true
+        description: Register document libraries via /sharepoint/sitelist (DSP host).
+      sharepoint_rer_dsp_fqdn:
+        type: str
+        description: DSP FQDN for the /sharepoint API. Required for sitelist register/unregister.
+      sharepoint_rer_keycloak_token_url:
+        type: str
+        description: Keycloak token URL used to obtain an access token. Required for sitelist register/unregister.
+      sharepoint_rer_token_client_id:
+        type: str
+        default: opentdf
+        description: Client id used for the token request.
+      sharepoint_rer_token_client_secret:
+        type: str
+        description: Client secret used for the token request. Required for sitelist register/unregister.
+      sharepoint_rer_sitelists:
+        type: list
+        elements: dict
+        default: []
+        description: Document libraries to register; each item is the sitelist payload (defaults applied for common fields).

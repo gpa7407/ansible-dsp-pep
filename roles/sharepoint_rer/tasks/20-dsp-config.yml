@@ -1,0 +1,36 @@
+---
+- name: Validate DSP-side variables
+  ansible.builtin.assert:
+    that:
+      - sharepoint_rer_chart | length > 0
+      - sharepoint_rer_farm_fqdn | length > 0
+      - sharepoint_rer_platform_endpoint | length > 0
+      - sharepoint_rer_ccp_encoding | length > 0
+    fail_msg: >-
+      DSP config needs sharepoint_rer_chart, sharepoint_rer_farm_fqdn,
+      sharepoint_rer_platform_endpoint and sharepoint_rer_ccp_encoding (derive the
+      last one on the SharePoint server, or copy it from that host's facts).
+    quiet: true
+
+- name: Render the SharePoint RER values fragment
+  ansible.builtin.template:
+    src: sharepoint-rer-values.yaml.j2
+    dest: "{{ sharepoint_rer_fragment_path }}"
+    mode: "0600"
+  no_log: true
+
+- name: Helm upgrade DSP with the SharePoint RER values
+  ansible.builtin.command:
+    cmd: >-
+      helm upgrade --install -n {{ sharepoint_rer_namespace }}
+      {{ sharepoint_rer_helm_release }} {{ sharepoint_rer_chart }}
+      {% for f in sharepoint_rer_values_files %}--values {{ f }} {% endfor %}
+      --values {{ sharepoint_rer_fragment_path }}
+  register: sharepoint_rer_helm
+  changed_when: true
+
+- name: Restart the DSP platform deployment
+  ansible.builtin.command:
+    cmd: "kubectl rollout restart deployment {{ sharepoint_rer_deployment }} -n {{ sharepoint_rer_namespace }}"
+  register: sharepoint_rer_rollout
+  changed_when: true

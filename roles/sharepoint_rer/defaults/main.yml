@@ -1,0 +1,89 @@
+---
+# ===========================================================================
+# virtru.dsp_pep.sharepoint_rer -- the LEGACY RER SharePoint PEP.
+#
+# This role spans two very different targets and branches on ansible_os_family:
+#   * Windows (SharePoint server): install/configure the Virtru Claims Provider
+#     (CCP) farm solution and derive the CCP encoding.
+#   * Linux (DSP/Kubernetes host): render the SharePoint values fragment, run
+#     helm upgrade + rollout restart, and register document libraries via the
+#     /sharepoint/sitelist API -- always verifying the registration.
+#
+# Run it in a two-play playbook (see playbooks/install_sharepoint_rer.yml).
+#
+# NOTE: This is NOT the Module PEP. The Module PEP is roles/sharepoint. Do not
+# mix the two -- the /sharepoint/sitelist step below is RER-only.
+# ===========================================================================
+
+sharepoint_rer_state: present            # present | absent
+sharepoint_rer_validate_certs: false     # DSP/keycloak labs commonly use self-signed certs
+
+# --- Windows / Virtru Claims Provider (CCP) --------------------------------
+sharepoint_rer_ccp_wsp_src: ""           # path (controller) or URL to Virtru.CP.wsp (required on Windows)
+sharepoint_rer_ccp_wsp_dest: 'C:\Windows\Temp\Virtru.CP.wsp'
+sharepoint_rer_solution_name: virtru.cp.wsp
+
+# Machine.config <runtime> patch. Provide the assembly-bindings.config shipped in
+# the CCP zip (controller path or URL); leave empty to skip and patch by hand.
+sharepoint_rer_assembly_bindings_src: ""
+sharepoint_rer_assembly_bindings_dest: 'C:\Windows\Temp\assembly-bindings.config'
+sharepoint_rer_machine_config: 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Config\Machine.config'
+
+# CCP config object (constant object id) + values written into it.
+sharepoint_rer_ccp_object_id: 7f8823d4-e9eb-4e2c-b7f1-68d0f6af3978
+sharepoint_rer_platform_endpoint: ""     # e.g. https://platform.example.com (required on Windows)
+sharepoint_rer_client_secret: ""         # same secret as the DSP SharePoint PEP config (required on Windows)
+sharepoint_rer_augment_timeout: ""       # optional (ms); leave empty to keep default
+sharepoint_rer_http_timeout: ""          # optional (ms); leave empty to keep default
+
+# Populated automatically on the Windows host from the deployed CCP. For the DSP
+# play, either set this explicitly or read it from the Windows host's hostvars.
+sharepoint_rer_ccp_encoding: ""
+
+# --- DSP side: values fragment + helm --------------------------------------
+sharepoint_rer_run_helm: true
+sharepoint_rer_namespace: virtru
+sharepoint_rer_helm_release: dsp
+sharepoint_rer_chart: ""                 # path to the data-security-platform chart .tgz (required if run_helm)
+sharepoint_rer_values_files: []          # existing --values files to keep (e.g. playground-values.yaml)
+sharepoint_rer_fragment_path: /tmp/dsp-sharepoint-rer-values.yaml
+sharepoint_rer_deployment: dsp-platform  # deployment to rollout-restart after upgrade
+
+# sharepoint stanza written into the fragment
+sharepoint_rer_service_host_name: sharepoint
+sharepoint_rer_platform_auth_endpoint: ""
+sharepoint_rer_token_endpoint: ""
+sharepoint_rer_client_id: dsp-sharepoint
+sharepoint_rer_strict_assertions: false
+
+# one SharePoint farm (fqdn is stored with dots replaced by underscores)
+sharepoint_rer_farm_fqdn: ""             # e.g. sps1.usa.lab
+sharepoint_rer_auth_type: ntlm           # ntlm | adfs
+sharepoint_rer_domain: ""
+sharepoint_rer_username: ""
+sharepoint_rer_password: ""
+sharepoint_rer_system_event_users: ""    # optional
+sharepoint_rer_username_regex: ""        # optional
+
+# extra keys merged into the sharepoint stanza (e.g. draft_mode_enabled, rer_secret)
+sharepoint_rer_extra_values: {}
+
+# --- DSP side: document-library (sitelist) registration --------------------
+sharepoint_rer_register_sitelists: true
+sharepoint_rer_dsp_fqdn: ""              # e.g. dsp.example.com (host for the /sharepoint API)
+sharepoint_rer_keycloak_token_url: ""    # e.g. https://kc.example.com/realms/opentdf/protocol/openid-connect/token
+sharepoint_rer_token_client_id: opentdf
+sharepoint_rer_token_client_secret: ""
+
+# list of document libraries to register; each item is the sitelist payload.
+# assertion_type/transform_type/transform_format default per item below.
+sharepoint_rer_sitelists: []
+# - site_url: "https://sps1.usa.lab/sites/test"
+#   list_name: "Documents"
+#   list_admin: "admin@usa.lab"
+#   enable_default_tags: true
+#   default_tags: ["https://demo.com/attr/relto/value/usa"]
+#   assertion_type: "urn:nato:stanag:5636:A:1:elements:json"
+#   transform_type: "encrypt"
+#   transform_format: "tdf"
+#   reclassify_enabled: true

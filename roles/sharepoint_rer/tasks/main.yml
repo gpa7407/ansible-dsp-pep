@@ -1,0 +1,47 @@
+---
+# Branch by target: Windows = SharePoint server (CCP); other = DSP/k8s host.
+- name: Install and configure the Virtru Claims Provider (SharePoint server)
+  when: ansible_os_family == 'Windows'
+  block:
+    - name: Validate CCP variables
+      ansible.builtin.assert:
+        that:
+          - sharepoint_rer_ccp_wsp_src | length > 0
+          - not (sharepoint_rer_state == 'present') or (sharepoint_rer_platform_endpoint | length > 0)
+          - not (sharepoint_rer_state == 'present') or (sharepoint_rer_client_secret | length > 0)
+        fail_msg: >-
+          On the SharePoint server set sharepoint_rer_ccp_wsp_src and (for state=present)
+          sharepoint_rer_platform_endpoint and sharepoint_rer_client_secret.
+        quiet: true
+
+    - name: Install the Virtru Claims Provider
+      ansible.builtin.include_tasks: 10-ccp-install.yml
+      when: sharepoint_rer_state == 'present'
+
+    - name: Configure the Virtru Claims Provider
+      ansible.builtin.include_tasks: 11-ccp-config.yml
+      when: sharepoint_rer_state == 'present'
+
+    - name: Uninstall the Virtru Claims Provider
+      ansible.builtin.include_tasks: 30-ccp-uninstall.yml
+      when: sharepoint_rer_state == 'absent'
+
+- name: Configure DSP and register document libraries (DSP host)
+  when: ansible_os_family != 'Windows'
+  block:
+    - name: Apply the SharePoint values and helm upgrade
+      ansible.builtin.include_tasks: 20-dsp-config.yml
+      when:
+        - sharepoint_rer_state == 'present'
+        - sharepoint_rer_run_helm | bool
+
+    - name: Register document libraries (sitelist)
+      ansible.builtin.include_tasks: 21-dsp-sitelist.yml
+      when:
+        - sharepoint_rer_state == 'present'
+        - sharepoint_rer_register_sitelists | bool
+        - sharepoint_rer_sitelists | length > 0
+
+    - name: Unregister document libraries (sitelist)
+      ansible.builtin.include_tasks: 31-dsp-unregister.yml
+      when: sharepoint_rer_state == 'absent'

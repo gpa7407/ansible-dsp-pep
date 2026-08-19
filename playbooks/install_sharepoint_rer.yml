@@ -1,0 +1,25 @@
+---
+# Install the LEGACY Virtru RER SharePoint PEP.
+#
+# Two plays: the first runs on the SharePoint server(s) and installs/configures
+# the Virtru Claims Provider (deriving the CCP encoding); the second runs on the
+# DSP/Kubernetes host, applies the SharePoint values + helm upgrade, and registers
+# document libraries. The CCP encoding is passed from the first play to the second
+# via hostvars. See roles/sharepoint_rer/README.md.
+#
+# NOTE: This is the RER PEP, not the Module PEP (playbooks/install_sharepoint.yml).
+- name: Configure the Virtru Claims Provider on SharePoint
+  hosts: sharepoint_servers
+  gather_facts: true
+  roles:
+    - role: virtru.dsp_pep.sharepoint_rer
+
+- name: Configure DSP and register document libraries
+  hosts: dsp
+  gather_facts: true
+  vars:
+    # Reuse the CCP encoding derived on the SharePoint server.
+    sharepoint_rer_ccp_encoding: >-
+      {{ hostvars[groups['sharepoint_servers'][0]].sharepoint_rer_ccp_encoding | default('') }}
+  roles:
+    - role: virtru.dsp_pep.sharepoint_rer

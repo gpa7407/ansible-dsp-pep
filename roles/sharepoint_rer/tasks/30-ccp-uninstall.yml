@@ -1,0 +1,23 @@
+---
+- name: Retract and remove the Virtru Claims Provider solution
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+      $name = '{{ sharepoint_rer_solution_name }}'
+      $sol = Get-SPSolution -Identity $name -ErrorAction SilentlyContinue
+      if (-not $sol) {
+        $Ansible.Changed = $false
+        $Ansible.Result = @{ removed = $false; reason = 'not present' }
+      } else {
+        if ($sol.Deployed) {
+          Uninstall-SPSolution -Identity $name -Confirm:$false -Force
+          $deadline = (Get-Date).AddMinutes(5)
+          do { Start-Sleep -Seconds 5; $sol = Get-SPSolution -Identity $name } until (-not $sol.Deployed -or (Get-Date) -gt $deadline)
+        }
+        Remove-SPSolution -Identity $name -Confirm:$false -Force
+        $Ansible.Changed = $true
+        $Ansible.Result = @{ removed = $true }
+      }
+  register: sharepoint_rer_ccp_remove
+  notify: Restart SharePoint services

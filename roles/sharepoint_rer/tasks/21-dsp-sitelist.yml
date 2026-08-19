@@ -1,0 +1,100 @@
+---
+- name: Validate sitelist variables
+  ansible.builtin.assert:
+    that:
+      - sharepoint_rer_dsp_fqdn | length > 0
+      - sharepoint_rer_keycloak_token_url | length > 0
+      - sharepoint_rer_token_client_secret | length > 0
+    fail_msg: >-
+      Sitelist registration needs sharepoint_rer_dsp_fqdn,
+      sharepoint_rer_keycloak_token_url and sharepoint_rer_token_client_secret.
+    quiet: true
+
+- name: Apply defaults to each sitelist entry
+  ansible.builtin.set_fact:
+    sharepoint_rer_sitelists_norm: "{{ (sharepoint_rer_sitelists_norm | default([])) + [_defaults | combine(item)] }}"
+  loop: "{{ sharepoint_rer_sitelists }}"
+  loop_control:
+    label: "{{ item.site_url | default('?') }}/{{ item.list_name | default('Documents') }}"
+  vars:
+    _defaults:
+      list_name: Documents
+      enable_default_tags: true
+      default_tags: []
+      assertion_type: "urn:nato:stanag:5636:A:1:elements:json"
+      transform_type: encrypt
+      transform_format: tdf
+      reclassify_enabled: true
+
+- name: Obtain an access token
+  ansible.builtin.uri:
+    url: "{{ sharepoint_rer_keycloak_token_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: client_credentials
+      client_id: "{{ sharepoint_rer_token_client_id }}"
+      client_secret: "{{ sharepoint_rer_token_client_secret }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200]
+  register: sharepoint_rer_token
+  no_log: true
+
+- name: Check the SharePoint PEP health
+  ansible.builtin.uri:
+    url: "https://{{ sharepoint_rer_dsp_fqdn }}/sharepoint/health"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ sharepoint_rer_token.json.access_token }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200]
+  register: sharepoint_rer_health
+
+- name: Show SharePoint health
+  ansible.builtin.debug:
+    var: sharepoint_rer_health.json
+
+- name: Register the document libraries (POST /sharepoint/sitelist)
+  ansible.builtin.uri:
+    url: "https://{{ sharepoint_rer_dsp_fqdn }}/sharepoint/sitelist"
+    method: POST
+    body_format: json
+    body: "{{ sharepoint_rer_sitelists_norm }}"
+    headers:
+      Authorization: "Bearer {{ sharepoint_rer_token.json.access_token }}"
+      Content-Type: application/json
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200, 201]
+  register: sharepoint_rer_register
+  changed_when: true
+
+# CRITICAL: POST returns 200 even when policy fields are silently dropped.
+- name: Read back the registered sitelist (GET /sharepoint/sitelist)
+  ansible.builtin.uri:
+    url: "https://{{ sharepoint_rer_dsp_fqdn }}/sharepoint/sitelist"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ sharepoint_rer_token.json.access_token }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200]
+  register: sharepoint_rer_verify
+
+- name: Verify assertion_type survived for every registered document library
+  ansible.builtin.assert:
+    that:
+      - _matched | length > 0
+      - _matched | selectattr('assertion_type', 'defined') | selectattr('assertion_type', 'equalto', item.assertion_type) | list | length > 0
+    fail_msg: >-
+      assertion_type was silently dropped for {{ item.site_url }} / {{ item.list_name }}
+      -- registered files would be encrypted with NO assertion policy (FEDCD-1055).
+      Check the sitelist payload field names and re-register.
+    success_msg: "assertion_type OK for {{ item.site_url }} / {{ item.list_name }}"
+    quiet: true
+  loop: "{{ sharepoint_rer_sitelists_norm }}"
+  loop_control:
+    label: "{{ item.site_url }}/{{ item.list_name }}"
+  vars:
+    _matched: >-
+      {{ sharepoint_rer_verify.json
+         | selectattr('site_url', 'defined') | selectattr('site_url', 'equalto', item.site_url)
+         | selectattr('list_name', 'equalto', item.list_name) | list }}

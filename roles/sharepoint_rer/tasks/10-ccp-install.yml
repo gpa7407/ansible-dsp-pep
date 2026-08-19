@@ -1,0 +1,92 @@
+---
+- name: Download the Virtru.CP.wsp solution
+  ansible.windows.win_get_url:
+    url: "{{ sharepoint_rer_ccp_wsp_src }}"
+    dest: "{{ sharepoint_rer_ccp_wsp_dest }}"
+  when: sharepoint_rer_ccp_wsp_src is match('^https?://')
+
+- name: Copy the Virtru.CP.wsp solution from the controller
+  ansible.windows.win_copy:
+    src: "{{ sharepoint_rer_ccp_wsp_src }}"
+    dest: "{{ sharepoint_rer_ccp_wsp_dest }}"
+  when: not (sharepoint_rer_ccp_wsp_src is match('^https?://'))
+
+# --- Machine.config <runtime> patch (optional) ------------------------------
+- name: Stage the assembly-bindings.config
+  when: sharepoint_rer_assembly_bindings_src | length > 0
+  block:
+    - name: Download assembly-bindings.config
+      ansible.windows.win_get_url:
+        url: "{{ sharepoint_rer_assembly_bindings_src }}"
+        dest: "{{ sharepoint_rer_assembly_bindings_dest }}"
+      when: sharepoint_rer_assembly_bindings_src is match('^https?://')
+
+    - name: Copy assembly-bindings.config from the controller
+      ansible.windows.win_copy:
+        src: "{{ sharepoint_rer_assembly_bindings_src }}"
+        dest: "{{ sharepoint_rer_assembly_bindings_dest }}"
+      when: not (sharepoint_rer_assembly_bindings_src is match('^https?://'))
+
+    - name: Replace the empty <runtime/> node in Machine.config
+      ansible.windows.win_powershell:
+        script: |
+          $ErrorActionPreference = 'Stop'
+          $mcPath = '{{ sharepoint_rer_machine_config }}'
+          $rt = (Get-Content -Raw -LiteralPath '{{ sharepoint_rer_assembly_bindings_dest }}').Trim()
+          $mc = Get-Content -Raw -LiteralPath $mcPath
+          $empty = [regex]'<runtime\s*/>|<runtime>\s*</runtime>'
+          if ($mc.Contains($rt)) {
+            $Ansible.Changed = $false
+            $Ansible.Result = @{ patched = $true; reason = 'already present' }
+          } elseif ($empty.IsMatch($mc)) {
+            $new = $empty.Replace($mc, $rt, 1)
+            Set-Content -LiteralPath $mcPath -Value $new -Encoding UTF8
+            $Ansible.Changed = $true
+            $Ansible.Result = @{ patched = $true }
+          } else {
+            throw "Machine.config already has a non-empty <runtime> node; merge assembly-bindings.config manually."
+          }
+      register: sharepoint_rer_mc_patch
+
+- name: Warn when the Machine.config patch is skipped
+  ansible.builtin.debug:
+    msg: >-
+      sharepoint_rer_assembly_bindings_src not set -- skipping the Machine.config
+      <runtime> patch. Apply it by hand from the CCP zip before the CCP will load.
+  when: sharepoint_rer_assembly_bindings_src | length == 0
+
+# --- Add + deploy the farm solution -----------------------------------------
+- name: Add and deploy the Virtru Claims Provider solution
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = 'Stop'
+      Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction SilentlyContinue
+      $name = '{{ sharepoint_rer_solution_name }}'
+      $changed = $false
+      $sol = Get-SPSolution -Identity $name -ErrorAction SilentlyContinue
+      if (-not $sol) {
+        $sol = Add-SPSolution -LiteralPath '{{ sharepoint_rer_ccp_wsp_dest }}'
+        $changed = $true
+      }
+      if (-not $sol.Deployed) {
+        Install-SPSolution -Identity $name -GACDeployment -Force -Confirm:$false
+        $deadline = (Get-Date).AddMinutes(5)
+        do {
+          Start-Sleep -Seconds 5
+          $sol = Get-SPSolution -Identity $name
+        } until ($sol.Deployed -or (Get-Date) -gt $deadline)
+        if (-not $sol.Deployed) { throw "Solution $name did not finish deploying in time." }
+        $changed = $true
+      }
+      $cp = Get-SPClaimProvider | Where-Object { $_.DisplayName -eq 'VirtruCP' -or $_.Name -eq 'VirtruCP' }
+      $Ansible.Changed = $changed
+      $Ansible.Result = @{ deployed = [bool]$sol.Deployed; claim_provider = [bool]$cp }
+  register: sharepoint_rer_deploy
+  notify: Restart SharePoint services
+
+- name: Show CCP deployment status
+  ansible.builtin.debug:
+    var: sharepoint_rer_deploy.result
+
+- name: Ensure services are restarted before configuring the CCP
+  ansible.builtin.meta: flush_handlers

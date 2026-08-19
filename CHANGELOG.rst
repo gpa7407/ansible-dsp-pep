@@ -4,6 +4,15 @@ DSP PEP Collection Release Notes
 
 .. contents:: Topics
 
+v1.2.0
+======
+
+Minor Changes
+-------------
+
+- sharepoint role - document that the role is the Module PEP (not the legacy RER PEP) and warn that POST /sharepoint/sitelist must never be used with a Module PEP deployment (silent assertion_type drop, FEDCD-1055).
+- sharepoint_rer role - new role ``virtru.dsp_pep.sharepoint_rer`` for the legacy RER SharePoint PEP. Branches on ansible_os_family - on the SharePoint server it installs/configures the Virtru Claims Provider (Machine.config runtime patch, Add/Install-SPSolution, CCP config object, CCP encoding derivation); on the DSP host it renders the SharePoint values fragment, runs helm upgrade + rollout restart, and registers document libraries via /sharepoint/sitelist with a mandatory GET verification that asserts assertion_type is non-empty.
+
 v1.1.0
 ======
 

@@ -1,0 +1,32 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+# Virtru RER SharePoint PEP values fragment. Passed to helm as an extra --values
+# so it deep-merges over the base values.yaml (only these keys are overridden).
+sharepoint:
+  service_host_name: "{{ sharepoint_rer_service_host_name }}"
+  platform_endpoint: "{{ sharepoint_rer_platform_endpoint }}"
+  {% if sharepoint_rer_platform_auth_endpoint | length > 0 %}
+  platform_auth_endpoint: "{{ sharepoint_rer_platform_auth_endpoint }}"
+  {% endif %}
+  {% if sharepoint_rer_token_endpoint | length > 0 %}
+  token_endpoint: "{{ sharepoint_rer_token_endpoint }}"
+  {% endif %}
+  client_id: "{{ sharepoint_rer_client_id }}"
+  client_secret: "{{ sharepoint_rer_client_secret }}"
+  strict_assertions: {{ 'true' if (sharepoint_rer_strict_assertions | bool) else 'false' }}
+  sharepoint_farms:
+    {{ sharepoint_rer_farm_fqdn | replace('.', '_') }}:
+      auth_type: "{{ sharepoint_rer_auth_type }}"
+      domain: "{{ sharepoint_rer_domain }}"
+      username: "{{ sharepoint_rer_username }}"
+      password: "{{ sharepoint_rer_password }}"
+      ccp_encoding: '{{ sharepoint_rer_ccp_encoding }}'
+      {% if sharepoint_rer_system_event_users | length > 0 %}
+      system_event_users: "{{ sharepoint_rer_system_event_users }}"
+      {% endif %}
+      {% if sharepoint_rer_username_regex | length > 0 %}
+      username_regex: "{{ sharepoint_rer_username_regex }}"
+      {% endif %}
+  {% if sharepoint_rer_extra_values | length > 0 %}
+{{ sharepoint_rer_extra_values | to_nice_yaml(indent=2) | indent(2, first=true) }}
+  {% endif %}

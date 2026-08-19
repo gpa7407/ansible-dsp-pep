@@ -1,0 +1,60 @@
+---
+- name: Validate sitelist variables
+  ansible.builtin.assert:
+    that:
+      - sharepoint_rer_dsp_fqdn | length > 0
+      - sharepoint_rer_keycloak_token_url | length > 0
+      - sharepoint_rer_token_client_secret | length > 0
+    fail_msg: "Unregister needs sharepoint_rer_dsp_fqdn, sharepoint_rer_keycloak_token_url and sharepoint_rer_token_client_secret."
+    quiet: true
+
+- name: Obtain an access token
+  ansible.builtin.uri:
+    url: "{{ sharepoint_rer_keycloak_token_url }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: client_credentials
+      client_id: "{{ sharepoint_rer_token_client_id }}"
+      client_secret: "{{ sharepoint_rer_token_client_secret }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200]
+  register: sharepoint_rer_token
+  no_log: true
+
+- name: List registered document libraries
+  ansible.builtin.uri:
+    url: "https://{{ sharepoint_rer_dsp_fqdn }}/sharepoint/sitelist"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ sharepoint_rer_token.json.access_token }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200]
+  register: sharepoint_rer_verify
+
+- name: Collect the list_hashes to unregister
+  ansible.builtin.set_fact:
+    sharepoint_rer_to_delete: "{{ (sharepoint_rer_to_delete | default([])) + _matched }}"
+  loop: "{{ sharepoint_rer_sitelists }}"
+  loop_control:
+    label: "{{ item.site_url }}/{{ item.list_name | default('Documents') }}"
+  vars:
+    _ln: "{{ item.list_name | default('Documents') }}"
+    _matched: >-
+      {{ sharepoint_rer_verify.json
+         | selectattr('site_url', 'defined') | selectattr('site_url', 'equalto', item.site_url)
+         | selectattr('list_name', 'equalto', _ln)
+         | selectattr('list_hash', 'defined') | list }}
+
+- name: Unregister each matched document library (DELETE by list_hash)
+  ansible.builtin.uri:
+    url: "https://{{ sharepoint_rer_dsp_fqdn }}/sharepoint/sitelist/{{ item.list_hash }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ sharepoint_rer_token.json.access_token }}"
+    validate_certs: "{{ sharepoint_rer_validate_certs }}"
+    status_code: [200, 204]
+  changed_when: true
+  loop: "{{ sharepoint_rer_to_delete | default([]) }}"
+  loop_control:
+    label: "{{ item.site_url | default(item.list_hash) }}"

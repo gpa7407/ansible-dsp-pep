@@ -9,6 +9,20 @@ a local SQL Server database and (optionally) an encrypted-search index. This rol
 automates the parts that can be scripted; the farm-wide registration is done with
 a GUI Configuration Tool (see [Manual steps](#manual-steps)).
 
+> ⚠️ **This role is for the Module PEP (Virtru for Microsoft SharePoint V1.0) — NOT
+> the legacy RER PEP.** They are different products with different install and
+> configuration flows.
+>
+> **Do NOT register document libraries via `POST /sharepoint/sitelist` for a Module
+> PEP deployment.** The DSP bundle still exposes `/sharepoint/sitelist` even when
+> you are running the Module PEP, and the call returns `HTTP 200 OK` — but policy
+> fields such as `assertion_type` are **silently dropped**, so files are encrypted
+> with **no assertion policy** (highest-severity silent drop; FEDCD-1055, confirmed
+> by live field testing, June 2026). Module PEP configuration is done **only**
+> through the Config Tool UI / the config files this role manages. Sitelist
+> registration belongs to the RER PEP alone. This role deliberately never calls
+> that endpoint.
+
 What it does:
 
 1. Installs prerequisite runtimes — **.NET 8.0 Hosting Bundle** (required for
